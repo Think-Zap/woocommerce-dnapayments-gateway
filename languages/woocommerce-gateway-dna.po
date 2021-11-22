@@ -1,0 +1,136 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"POT-Creation-Date: 2020-03-02 14:45+0600\n"
+"PO-Revision-Date: 2020-03-02 14:45+0600\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 2.3\n"
+"X-Poedit-Basepath: ..\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Poedit-KeywordsList: __\n"
+"X-Poedit-SearchPath-0: dnapayments-gateway.php\n"
+
+#: dnapayments-gateway.php:63 dnapayments-gateway.php:79
+msgid "Payment error:"
+msgstr ""
+
+#: dnapayments-gateway.php:84
+msgid "Oups! Payment failed! Please, try later..."
+msgstr ""
+
+#: dnapayments-gateway.php:92
+msgid "Enable/Disable"
+msgstr ""
+
+#: dnapayments-gateway.php:93
+msgid "Enable dnapayments gateway"
+msgstr ""
+
+#: dnapayments-gateway.php:99
+msgid "Title"
+msgstr ""
+
+#: dnapayments-gateway.php:101
+msgid "This controls the title which the user sees during checkout."
+msgstr ""
+
+#: dnapayments-gateway.php:106
+msgid "Description"
+msgstr ""
+
+#: dnapayments-gateway.php:108
+msgid "This controls the description which the user sees during checkout."
+msgstr ""
+
+#: dnapayments-gateway.php:112
+msgid "LIVE client ID"
+msgstr ""
+
+#: dnapayments-gateway.php:116
+msgid "LIVE secret"
+msgstr ""
+
+#: dnapayments-gateway.php:120
+msgid "LIVE terminal number"
+msgstr ""
+
+#: dnapayments-gateway.php:124
+msgid "Test mode"
+msgstr ""
+
+#: dnapayments-gateway.php:127
+msgid "Place the payment gateway in test mode using test API keys."
+msgstr ""
+
+#: dnapayments-gateway.php:132
+msgid "Test client ID"
+msgstr ""
+
+#: dnapayments-gateway.php:137
+msgid "Test client secret"
+msgstr ""
+
+#: dnapayments-gateway.php:141
+msgid "Test terminal number"
+msgstr ""
+
+#: dnapayments-gateway.php:145
+msgid "Back Link"
+msgstr ""
+
+#: dnapayments-gateway.php:147
+msgid "URL for success page."
+msgstr ""
+
+#: dnapayments-gateway.php:151
+msgid "Failure back link"
+msgstr ""
+
+#: dnapayments-gateway.php:153
+msgid "URL for failure page."
+msgstr ""
+
+#: dnapayments-gateway.php:157
+msgid "Base URL"
+msgstr ""
+
+#: dnapayments-gateway.php:159
+msgid "The Base URL of your site"
+msgstr ""
+
+#: dnapayments-gateway.php:163
+msgid "Gateway order description"
+msgstr ""
+
+#: dnapayments-gateway.php:193
+msgid "Country must be less than 2 symbols"
+msgstr ""
+
+#: dnapayments-gateway.php:196
+msgid "City must be less than 50 symbols"
+msgstr ""
+
+#: dnapayments-gateway.php:199
+msgid "Address must be less than 50 symbols"
+msgstr ""
+
+#: dnapayments-gateway.php:202
+msgid "Email must be less than 256 symbols"
+msgstr ""
+
+#: dnapayments-gateway.php:205
+msgid "Lastname must be less than 32 symbols"
+msgstr ""
+
+#: dnapayments-gateway.php:208
+msgid "Firstname must be less than 32 symbols"
+msgstr ""
+
+#: dnapayments-gateway.php:211
+msgid "Postcode must be less than 13 symbols"
+msgstr ""
