@@ -305,7 +305,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             return;
         }
 
-        wp_enqueue_script( 'dna-payment-api', 'https://test-pay.dnapayments.com/checkout/payment-api.js' , array('jquery'), '1.0', true );
+        wp_enqueue_script( 'dna-payment-api', 'https://pay.dnapayments.com/checkout/payment-api.js' , array('jquery'), '1.0', true );
         wp_register_script('woocommerce_dna_payment', plugins_url('assets/js/dna-payment.js', WC_DNA_MAIN_FILE), array('jquery', 'dna-payment-api') , '1.0', true);
 
 
