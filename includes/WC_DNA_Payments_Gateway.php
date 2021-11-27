@@ -118,7 +118,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
      * @param  float $amount
      * @return bool
      */
-    public function process_refund( $order_id, $amount = null) {
+    public function process_refund( $order_id, $amount = null, $reason = '') {
         $logger = wc_get_logger();
         $order = wc_get_order($order_id);
 
@@ -158,16 +158,19 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         register_rest_route( 'dnapayments', 'success', array(
             'methods'  => WP_REST_Server::CREATABLE,
             'callback' => array( $this, 'success_webhook'),
+            'permission_callback' => '__return_true'
         ) );
 
         register_rest_route( 'dnapayments', 'failure', array(
             'methods'  => WP_REST_Server::CREATABLE,
             'callback' => array( $this, 'fail_webhook'),
+            'permission_callback' => '__return_true'
         ) );
 
         register_rest_route( 'dnapayments', 'failure-page', array(
             'methods'  => WP_REST_Server::READABLE,
             'callback' => array( $this, 'fail_page_webhook'),
+            'permission_callback' => '__return_true'
         ) );
     }
 
