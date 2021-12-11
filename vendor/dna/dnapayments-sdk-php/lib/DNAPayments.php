@@ -168,8 +168,7 @@ class DNAPayments {
                 'terminal' => $data['terminal'],
                 'invoiceId' => strval($data['invoiceId']),
                 'amount' => floatval($data['amount']),
-                'currency' => strval($data['currency']),
-                'paymentFormURL' => array_key_exists('paymentFormURL', $data) ? $data['paymentFormURL'] : self::getPath()->paymentUrl . '/checkout/' // todo: add
+                'currency' => strval($data['currency'])
             ];
 
             $response = HTTPRequester::HTTPPost(self::getPath()->authUrl, [], $authData);
