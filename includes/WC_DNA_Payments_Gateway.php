@@ -411,6 +411,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             'invoiceId' => strval($order->get_order_number()),
             'amount' => floatval($order->get_total()),
             'currency' => $order->get_currency(),
+            'phone' => $order->get_billing_phone(),
             'accountId' => $order->get_customer_id() ? strval($order->get_customer_id()) : '',
             'accountEmail' => $order->get_billing_email(),
             'accountCountry' => $order->get_billing_country(),

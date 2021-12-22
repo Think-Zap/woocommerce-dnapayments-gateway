@@ -112,6 +112,7 @@ class WC_DNA_Payments_Order_Client_Helpers {
             'city'       => $order->get_shipping_city(),
             'region'      => strlen($state) >= 0 && strlen($state) <= 3 ? $state : '',
             'postalCode'   => $order->get_shipping_postcode(),
+            'phone'      => $order->get_meta('_shipping_phone'),
             'country'    => $order->get_shipping_country()
         );
     }
@@ -135,11 +136,17 @@ class WC_DNA_Payments_Order_Client_Helpers {
 
         foreach ($order->get_items() as $item_id => $item) {
             $total = self::numberFormat($item->get_total());
+            $product = $item->get_product();
+            $image_id  = $product->get_image_id();
+            $image_url = $image_id ? wp_get_attachment_image_url( $image_id, 'full' ) : '';
+            
             $orderLines[] = array(
                 'reference' => strval($item->get_id()),
                 'name' => html_entity_decode( wc_trim_string( $item->get_name() ? wp_strip_all_tags( $item->get_name() ) : __( 'Item', 'woocommerce' ), 127 ), ENT_NOQUOTES, 'UTF-8' ),
                 'quantity' => $item->get_quantity(),
                 'unitPrice' => self::numberFormat(($item->get_total()/$item->get_quantity())),
+                'imageUrl' => $image_url,
+                'productUrl' => $product->get_permalink(),
                 'totalAmount' => $total
             );
         }
