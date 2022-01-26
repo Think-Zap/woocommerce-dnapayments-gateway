@@ -118,11 +118,13 @@ class WC_DNA_Payments_Order_Client_Helpers {
     }
 
     public static function getShippingPhone(WC_Abstract_order $order) {
+        $shipping_phone = '';
         if (version_compare( WC_VERSION, '5.6.0', '<' )) {
-            return $order->get_meta('_shipping_phone');
+            $shipping_phone = $order->get_meta('_shipping_phone');
         } else {
-            return $order->get_shipping_phone();
+            $shipping_phone = $order->get_shipping_phone();
         }
+        return $shipping_phone ? $shipping_phone : $order->get_billing_phone();
     }
 
     public static function getSingItemOrderLines(WC_Abstract_order $order) {

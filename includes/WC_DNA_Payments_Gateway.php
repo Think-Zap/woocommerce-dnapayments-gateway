@@ -231,11 +231,11 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 $this->savePayPalOrderDetail($order, $input, true);
             } else {
                 $order->set_transaction_id($input['id']);
-                if($input['settled']) {
+                if($input['settled'] || $input['paymentMethod'] == 'ecospend') {
                     $order->payment_complete();
                     $order->add_order_note( sprintf( __( 'DNA Payments transaction complete (Transaction ID: %s)', 'woocommerce-gateway-dna' ), $input['id']) );
                 } else {
-                    $order->update_status( 'on-hold');
+                    $order->update_status('on-hold');
                     $order->add_order_note( sprintf( __( 'DNA Payments awaiting payment complete (Transaction ID: %s)', 'woocommerce-gateway-dna' ), $input['id']) );
                 }
 
