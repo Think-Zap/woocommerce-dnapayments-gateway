@@ -112,9 +112,17 @@ class WC_DNA_Payments_Order_Client_Helpers {
             'city'       => $order->get_shipping_city(),
             'region'      => strlen($state) >= 0 && strlen($state) <= 3 ? $state : '',
             'postalCode'   => $order->get_shipping_postcode(),
-            'phone'      => $order->get_meta('_shipping_phone'),
+            'phone'      => self::getShippingPhone($order),
             'country'    => $order->get_shipping_country()
         );
+    }
+
+    public static function getShippingPhone(WC_Abstract_order $order) {
+        if (version_compare( WC_VERSION, '5.6.0', '<' )) {
+            return $order->get_meta('_shipping_phone');
+        } else {
+            return $order->get_shipping_phone();
+        }
     }
 
     public static function getSingItemOrderLines(WC_Abstract_order $order) {
