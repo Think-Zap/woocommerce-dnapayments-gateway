@@ -9,9 +9,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WC_DNA_Payments_Order_Handler extends WC_DNA_Payments_Gateway {
     public function __construct() {
-
-        add_action( 'woocommerce_order_status_processing', array( $this, 'capture_payment' ) );
-        add_action( 'woocommerce_order_status_completed', array( $this, 'capture_payment' ) );
+        add_action( 'woocommerce_order_status_changed', array( $this, 'capture_payment' ), 10, 3 );
         add_action( 'woocommerce_order_status_cancelled', array( $this, 'cancel_payment' ) );
         add_action( 'woocommerce_order_status_refunded', array( $this, 'cancel_payment' ) );
         parent::__construct();
@@ -22,11 +20,22 @@ class WC_DNA_Payments_Order_Handler extends WC_DNA_Payments_Gateway {
      *
      * @param  int $order_id
      */
-    public function capture_payment( $order_id ) {
+    public function capture_payment( $order_id, $previous_status, $next_status ) {
         $order = wc_get_order( $order_id );
         $logger = wc_get_logger();
 
-        if ( 'dnapayments' === $order->get_payment_method() ) {
+        $complete_statuses = [
+            'processing',
+            'completed',
+            $this->get_option( 'complete_order_status' )
+        ];
+
+        if (
+            'dnapayments' === $order->get_payment_method() &&
+            in_array($next_status, $complete_statuses) &&
+            !in_array($previous_status, $complete_statuses)
+        ) {
+
             $paymentMethod = $order->get_meta( 'payment_method', true );
 
             if($paymentMethod === 'paypal' && !WC_DNA_Payments_Order_Admin_Helpers::isValidStatusPayPalStatus($order)) {

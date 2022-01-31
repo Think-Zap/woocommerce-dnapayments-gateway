@@ -8,6 +8,8 @@ if ( is_readable( WC_DNA_PLUGIN_PATH . '/vendor/autoload.php' ) ) {
     require WC_DNA_PLUGIN_PATH . '/vendor/autoload.php';
 }
 
+require_once WC_DNA_PLUGIN_PATH . '/includes/admin/fields.php';
+
 
 class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
@@ -231,7 +233,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 $this->savePayPalOrderDetail($order, $input, true);
             } else {
                 $order->set_transaction_id($input['id']);
-                if($input['settled'] || $input['paymentMethod'] == 'ecospend') {
+                if($input['settled']) {
                     $order->payment_complete();
                     $order->add_order_note( sprintf( __( 'DNA Payments transaction complete (Transaction ID: %s)', 'woocommerce-gateway-dna' ), $input['id']) );
                 } else {
@@ -292,7 +294,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
     }
 
     public function init_form_fields(){
-        $this->form_fields = require( WC_DNA_PLUGIN_PATH . '/includes/admin/fields.php' );
+        $this->form_fields = get_dnapayments_admin_fields();
     }
 
     public function payment_scripts() {
