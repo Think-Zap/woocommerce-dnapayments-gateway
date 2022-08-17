@@ -59,16 +59,20 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts') );
         load_plugin_textdomain( 'woocommerce-gateway-dna', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
         add_action( 'rest_api_init', array( $this, 'register_routes' ));
-        $this->dnaPayment = new DNAPayments\DNAPayments([
+        $this->dnaPayment = new DNAPayments\DNAPayments($this->get_config());
+
+        $this->supports = array( 'products', 'refunds' );
+
+    }
+
+    public function get_config() {
+        return [
             'isTestMode' => $this->is_test_mode,
             'scopes' => [
                 'allowHosted' => true,
                 'allowEmbedded' => $this->integration_type == 'embedded'
             ]
-        ]);
-
-        $this->supports = array( 'products', 'refunds' );
-
+        ];
     }
 
     /**
@@ -395,6 +399,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         $order = wc_get_order( $order_id );
 
         try {
+            \DNAPayments\DNAPayments::configure($this->get_config());
             $auth = \DNAPayments\DNAPayments::auth($this->getAuthData($order));
         } catch (Error $e) {
             return array(
