@@ -69,7 +69,8 @@ function get_dnapayments_admin_fields() {
           'desc_tip'    => true,
           'options'     => array(
              'hosted' => __( 'Full Redirect', 'woocommerce-gateway-dna' ),
-             'embedded' => __( 'iFrame LightBox', 'woocommerce-gateway-dna' )
+             'embedded' => __( 'iFrame LightBox', 'woocommerce-gateway-dna' ),
+             'hosted-fields' => __( 'Hosted Fields', 'woocommerce-gateway-dna' )
           ),
        ),
        'complete_order_status' => array(

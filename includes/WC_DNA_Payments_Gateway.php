@@ -314,8 +314,13 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             return;
         }
 
+        wp_register_style( 'dna_styles', plugins_url( 'assets/css/dna-payment.css', WC_DNA_MAIN_FILE ), [], WC_DNA_VERSION );
+		wp_enqueue_style( 'dna_styles' );
+
+        wp_enqueue_script( 'dna-hosted-fields', 'https://test-cdn.dnapayments.com/js/hosted-fields/hosted-fields.js' , array('jquery'), '1.0', true );
         wp_enqueue_script( 'dna-payment-api', 'https://pay.dnapayments.com/checkout/payment-api.js' , array('jquery'), '1.0', true );
-        wp_register_script('woocommerce_dna_payment', plugins_url('assets/js/dna-payment.js', WC_DNA_MAIN_FILE), array('jquery', 'dna-payment-api') , WC_DNA_VERSION, true);
+        
+        wp_register_script('woocommerce_dna_payment', plugins_url('assets/js/dna-payment.js', WC_DNA_MAIN_FILE), array('jquery', 'dna-hosted-fields', 'dna-payment-api') , WC_DNA_VERSION, true);
 
 
         $dna_params = array(
@@ -412,34 +417,124 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
         $isForcePayment = !WC_DNA_Payments_Order_Client_Helpers::isPaypalLineItemsValid($order);
         $orderLines = WC_DNA_Payments_Order_Client_Helpers::getOrderLines($order, $isForcePayment);
+        $transactionType = $this->get_option('transactionType');
 
-        return array(
-            'terminal' => $this->terminal,
+        $paymentData = [
             'invoiceId' => strval($order->get_order_number()),
+            'description' => $this->get_option('gatewayOrderDescription'),
             'amount' => floatval($order->get_total()),
             'currency' => $order->get_currency(),
-            'phone' => $order->get_billing_phone(),
-            'accountId' => $order->get_customer_id() ? strval($order->get_customer_id()) : '',
-            'accountEmail' => $order->get_billing_email(),
-            'accountCountry' => $order->get_billing_country(),
-            'accountCity' => $order->get_billing_city(),
-            'accountStreet1' => $order->get_billing_address_1(),
-            'accountFirstName' => $order->get_billing_first_name(),
-            'accountLastName' => $order->get_billing_last_name(),
-            'accountPostalCode' => $order->get_billing_postcode(),
-            'shippingAddress' => WC_DNA_Payments_Order_Client_Helpers::getShippingAddress($order),
-            'amountBreakdown' => WC_DNA_Payments_Order_Client_Helpers::getAmountBreakdown($order),
-            'orderLines' => $orderLines,
-            'backLink' => $this->getBackLink($order),
-            'failureBackLink' => $this->getFailureBackLink(),
-            'postLink' => get_rest_url(null, 'dnapayments/success'),
-            'failurePostLink' => get_rest_url(null, 'dnapayments/failure'),
             'language' => 'en-gb',
-            'description' => $this->get_option('gatewayOrderDescription'),
-            'transactionType' => $this->get_option('transactionType'),
+            'paymentSettings' => [
+                'terminalId' => $this->terminal,
+                'returnUrl' => $this->getBackLink($order),
+                'failureReturnUrl' => $this->getFailureBackLink(),
+                'callbackUrl' => get_rest_url(null, 'dnapayments/success'),
+                'failureCallbackUrl' => get_rest_url(null, 'dnapayments/failure')
+            ],
+            'customerDetails' => [
+                'email' => $order->get_billing_email(),
+                'accountDetails' => [
+                    'accountId' => $order->get_customer_id() ? strval($order->get_customer_id()) : '',
+                ],
+                'billingAddress' => WC_DNA_Payments_Order_Client_Helpers::getBillingAddress($order),
+                'deliveryDetails' => [
+                    'deliveryAddress' => WC_DNA_Payments_Order_Client_Helpers::getShippingAddress($order),
+                ]
+            ],
+            'amountBreakdown' => WC_DNA_Payments_Order_Client_Helpers::getAmountBreakdown($order),
+            'orderLines' => $orderLines
+        ];
+
+        if ( isset($transactionType) && !empty($transactionType) && $transactionType != 'default' ) {
+            $paymentData['transactionType'] = $transactionType;
+        }
+
+        return array(
+            'paymentData' => $paymentData,            
             'auth' => $auth,
             'result' => 'success'
         );
 
     }
+
+    /**
+	 * Payment form on checkout page
+	 */
+	public function payment_fields() {
+		global $wp;
+		ob_start();
+
+        $description = $this->get_description();
+        if ( $description ) {
+            echo wpautop( wptexturize( $description ) );
+        }
+
+        if ($this->integration_type == 'hosted-fields') {
+            $this->elements_form();
+        }
+
+		ob_end_flush();
+	}
+
+    public function temp_token() {
+        try {
+            \DNAPayments\DNAPayments::configure($this->get_config());
+            $auth = \DNAPayments\DNAPayments::auth(array(
+                'client_id' => $this->client_id,
+                'client_secret' => $this->client_secret,
+                'terminal' => $this->terminal,
+                'invoiceId' => date('d-m-y h:i:s'),
+                'amount' => 0,
+                'currency' => 'GBP'
+            ));
+
+            return $auth['access_token'];
+        } catch (Error $e) {
+            return null;
+        }
+    }
+
+    /**
+	 * Renders the Hosted fields form.
+	 */
+	public function elements_form() {
+        $temp_token = $this->temp_token();
+		?>
+		<fieldset id="wc-<?php echo esc_attr( $this->id ); ?>-cc-form" class="wc-credit-card-form wc-payment-form" style="background:transparent;" data-token="<?php echo $temp_token; ?>">
+			<?php do_action( 'woocommerce_credit_card_form_start', $this->id ); ?>
+
+            <div class="form-row form-row-wide">
+                <label for="dna-card-name"><?php esc_html_e( 'Cardholder name', 'woocommerce-gateway-dna' ); ?> <span class="required">*</span></label>
+
+                <div id="dna-card-name" class="wc-dna-elements-field"></div>
+            </div>
+
+            <div class="form-row form-row-wide">
+                <label for="dna-card-number"><?php esc_html_e( 'Card number', 'woocommerce-gateway-dna' ); ?> <span class="required">*</span></label>
+
+                <div id="dna-card-number" class="wc-dna-elements-field"></div>
+            </div>
+
+            <div class="form-row form-row-first">
+                <label for="dna-card-exp"><?php esc_html_e( 'Expiry date', 'woocommerce-gateway-dna' ); ?> <span class="required">*</span></label>
+
+                <div id="dna-card-exp" class="wc-dna-elements-field"></div>
+            </div>
+
+            <div class="form-row form-row-last">
+                <label for="dna-card-cvc"><?php esc_html_e( 'Card code (CVC)', 'woocommerce-gateway-dna' ); ?> <span class="required">*</span></label>
+                <div id="dna-card-cvc" class="wc-dna-elements-field"></div>
+            </div>
+
+            <div class="clear"></div>
+
+			<!-- Used to display form errors -->
+			<div class="dna-source-errors" role="alert"></div>
+			<?php do_action( 'woocommerce_credit_card_form_end', $this->id ); ?>
+
+            <div class="clear"></div>
+		</fieldset>
+		<?php
+	}
 }

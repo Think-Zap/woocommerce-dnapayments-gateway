@@ -101,14 +101,30 @@ class WC_DNA_Payments_Order_Client_Helpers {
         );
     }
 
+    public static function getBillingAddress(WC_Abstract_order $order) {
+        $state = $order->get_billing_state();
+        return array(
+            'firstName' => $order->get_billing_first_name(),
+            'lastName'  => $order->get_billing_last_name(),
+            'addressLine1'  => $order->get_billing_address_1(),
+            'addressLine2'  => $order->get_billing_address_2(),
+            'city'       => $order->get_billing_city(),
+            'region'      => strlen($state) >= 0 && strlen($state) <= 3 ? $state : '',
+            'postalCode'   => $order->get_billing_postcode(),
+            'phone'      => $order->get_billing_phone(),
+            'country'    => $order->get_billing_country()
+        );
+    }
+
     public static function getShippingAddress(WC_Abstract_order $order) {
         if(!$order->needs_shipping_address()) return null;
         $state = $order->get_shipping_state();
+
         return array(
             'firstName' => $order->get_shipping_first_name(),
             'lastName'  => $order->get_shipping_last_name(),
-            'streetAddress1'  => $order->get_shipping_address_1(),
-            'streetAddress2'  => $order->get_shipping_address_2(),
+            'addressLine1'  => $order->get_shipping_address_1(),
+            'addressLine2'  => $order->get_shipping_address_2(),
             'city'       => $order->get_shipping_city(),
             'region'      => strlen($state) >= 0 && strlen($state) <= 3 ? $state : '',
             'postalCode'   => $order->get_shipping_postcode(),
