@@ -73,6 +73,13 @@ function get_dnapayments_admin_fields() {
              'hosted-fields' => __( 'Hosted Fields', 'woocommerce-gateway-dna' )
           ),
        ),
+       'enabled_saved_cards' => array(
+         'title'       => __( 'Enable saved cards', 'woocommerce-gateway-dna' ),
+         'label'       => __( 'Enable payment via saved cards', 'woocommerce-gateway-dna' ),
+         'type'        => 'checkbox',
+         'description' => '',
+         'default'     => 'no'
+      ),
        'complete_order_status' => array(
           'title'       => __( 'For which status to charge order', 'woocommerce-gateway-dna' ),
           'type'        => 'select',

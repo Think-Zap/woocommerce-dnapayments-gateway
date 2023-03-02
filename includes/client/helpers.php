@@ -1,4 +1,5 @@
 <?php
+
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
 }
@@ -182,5 +183,87 @@ class WC_DNA_Payments_Order_Client_Helpers {
 
     public static function isDNAPaymentOrder(WC_Order $order): bool {
         return 'dnapayments' === $order->get_payment_method();
+    }
+
+    public static function saveCardToken( WP_REST_Request $input, $gateway_id ) {
+        $user_id = $input['accountId'];
+        $token_id = $input['cardTokenId'];
+
+        if (
+            !isset( $user_id ) || empty( $user_id ) || !isset($token_id) ||  empty($token_id) ||
+            $input['paymentMethod'] != 'card'
+        ) {
+            return false;
+        }
+
+        function save_token($token, $input, $user_id, $token_id, $gateway_id) {
+            $date_arr = explode("/", $input['cardExpiryDate']);
+
+            // Set the token details
+            $token->set_token( $token_id ); // Token ID
+            $token->set_gateway_id( $gateway_id ); // Payment gateway ID
+            $token->set_card_type( $input['cardSchemeName'] ); // Card type
+            $token->set_last4( substr( $input['cardPanStarred'], -4 ) ); // Last 4 digits of the card number
+            $token->set_expiry_month( $date_arr[0] ); // Expiry month
+            $token->set_expiry_year( '20' . $date_arr[1] ); // Expiry year
+            $token->set_user_id( $user_id ); // User ID
+    
+            $token->update_meta_data( 'extra_data', [
+                'cardSchemeId' => $input['cardSchemeId'],
+                'cardName' => $input['cardholderName'],
+                'panStar' => $input['cardPanStarred'],
+                'expiryDate' => $input['cardExpiryDate']
+            ] );
+
+            // Save token
+            $token->save();
+        }
+
+        $tokens = array_filter(
+            WC_Payment_Tokens::get_customer_tokens( $user_id, $gateway_id ),
+            function ($token) use ($token_id) {
+                return $token->get_token() == $token_id;
+            }
+        );
+
+        if ( count($tokens) > 0 ) {
+            foreach ($tokens as $token) {
+                if ( $token->get_last4() != substr( $input['cardPanStarred'], -4 ) ) {
+                    save_token($token, $input, $user_id, $token_id, $gateway_id);
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        // Create a new payment token
+        $token = new WC_Payment_Token_CC();
+        save_token($token, $input, $user_id, $token_id, $gateway_id);
+
+        return true;
+    }
+
+    public static function getCardTokens( $user_id, $gateway_id ) {
+
+        if ( ! isset( $user_id ) || empty( $user_id ) || $user_id == 0) {
+            return [];
+        }
+
+        $tokens = WC_Payment_Tokens::get_customer_tokens( $user_id, $gateway_id );
+
+        return array_map(function ($token) {
+            $extra_data = $token->get_meta( 'extra_data' );
+
+            return [
+                'id' => $token->get_id(),
+                'merchantTokenId' => $token->get_token(),
+                'cardSchemeName' => $token->get_card_type(),
+                'cardSchemeId' => $extra_data['cardSchemeId'],
+                'cardName' => $extra_data['cardName'],
+                'panStar' => $extra_data['panStar'],
+                'expiryDate' => $extra_data['expiryDate']
+            ];
+        }, $tokens);
     }
 }

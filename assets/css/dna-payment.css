@@ -46,3 +46,9 @@
 .dna-modal-container.open .dna-modal {
     transform: translate(-50%, -50%) scale(1);
 }
+
+@media (min-width: 768px) {
+    #dna-card-cvc-token-container {
+        width: 75%;
+    }
+}

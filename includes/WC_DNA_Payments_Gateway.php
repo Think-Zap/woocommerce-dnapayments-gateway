@@ -30,6 +30,10 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
      */
     public $client_secret;
     /**
+     * @var boolean
+     */
+    public $enabled_saved_cards;
+    /**
      * @var string
      */
     public $integration_type;
@@ -52,6 +56,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         $this->enabled = $this->get_option( 'enabled' );
         $this->is_test_mode = 'yes' === $this->get_option( 'is_test_mode' );
         $this->integration_type = $this->get_option( 'integration_type' );
+        $this->enabled_saved_cards = 'yes' === $this->get_option( 'enabled_saved_cards' );
         $this->client_id = $this->is_test_mode ? $this->get_option( 'test_client_id' ) : $this->get_option( 'client_id' );
         $this->client_secret = $this->is_test_mode ? $this->get_option( 'test_client_secret' ) : $this->get_option( 'client_secret' );
         $this->terminal = $this->is_test_mode ? $this->get_option( 'test_terminal' ) : $this->get_option('terminal');
@@ -61,7 +66,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         add_action( 'rest_api_init', array( $this, 'register_routes' ));
         $this->dnaPayment = new DNAPayments\DNAPayments($this->get_config());
 
-        $this->supports = array( 'products', 'refunds' );
+        $this->supports = array( 'products', 'refunds', 'tokenization' );
 
     }
 
@@ -74,6 +79,12 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             ]
         ];
     }
+
+    public function save_payment_method_requested() {
+		$payment_method = isset( $_POST['payment_method'] ) ? wc_clean( wp_unslash( $_POST['payment_method'] ) ) : $this->id;
+
+		return isset( $_POST[ 'wc-' . $payment_method . '-new-payment-method' ] ) && ! empty( $_POST[ 'wc-' . $payment_method . '-new-payment-method' ] );
+	}
 
     /**
      * Cancel a charge.
@@ -223,6 +234,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
     }
 
      public function success_webhook( WP_REST_Request $input ) {
+
         if (!empty($input) && !empty($input['invoiceId']) && $input['success'] && $this->dnaPayment::isValidSignature($input, $this->client_secret)) {
 
             $invoiceId = WC_DNA_Payments_Order_Admin_Helpers::findOrderByOrderNumber($input['invoiceId']);
@@ -253,6 +265,10 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 }
                 $order->reduce_order_stock();
                 $order->save();
+            }
+
+            if ($this->enabled_saved_cards && $order->get_meta('save_payment_method_requested', true) == 'yes') {
+                WC_DNA_Payments_Order_Client_Helpers::saveCardToken( $input, $this->id );
             }
         } else {
             return;
@@ -317,16 +333,18 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         wp_register_style( 'dna_styles', plugins_url( 'assets/css/dna-payment.css', WC_DNA_MAIN_FILE ), [], WC_DNA_VERSION );
 		wp_enqueue_style( 'dna_styles' );
 
-        wp_enqueue_script( 'dna-hosted-fields', 'https://test-cdn.dnapayments.com/js/hosted-fields/hosted-fields.js' , array('jquery'), '1.0', true );
-        wp_enqueue_script( 'dna-payment-api', 'https://pay.dnapayments.com/checkout/payment-api.js' , array('jquery'), '1.0', true );
+        wp_enqueue_script( 'dna-hosted-fields', 'https://test-cdn.dnapayments.com/js/hosted-fields/hosted-fields.js' , array('jquery'), WC_DNA_VERSION, true );
+        wp_enqueue_script( 'dna-payment-api', 'https://pay.dnapayments.com/checkout/payment-api.js' , array('jquery'), WC_DNA_VERSION, true );
         
         wp_register_script('woocommerce_dna_payment', plugins_url('assets/js/dna-payment.js', WC_DNA_MAIN_FILE), array('jquery', 'dna-hosted-fields', 'dna-payment-api') , WC_DNA_VERSION, true);
 
 
         $dna_params = array(
             'is_test_mode' => $this->is_test_mode,
-            'integration_type' => $this->integration_type
+            'integration_type' => $this->integration_type,
+            'cards' => $this->enabled_saved_cards ? WC_DNA_Payments_Order_Client_Helpers::getCardTokens( get_current_user_id(), $this->id ) : []
         );
+
         wp_localize_script( 'woocommerce_dna_payment', 'wc_dna_params', apply_filters( 'wc_dna_params', $dna_params ) );
         wp_enqueue_script('woocommerce_dna_payment');
     }
@@ -419,6 +437,9 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         $orderLines = WC_DNA_Payments_Order_Client_Helpers::getOrderLines($order, $isForcePayment);
         $transactionType = $this->get_option('transactionType');
 
+        $order->update_meta_data('save_payment_method_requested', $this->save_payment_method_requested() ? 'yes' : 'no');
+        $order->save();
+
         $paymentData = [
             'invoiceId' => strval($order->get_order_number()),
             'description' => $this->get_option('gatewayOrderDescription'),
@@ -471,7 +492,24 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         }
 
         if ($this->integration_type == 'hosted-fields') {
+            $temp_token = $this->temp_token();
+
+            echo '<div id="wc-' . esc_attr( $this->id ) . '-form" data-token="' . $temp_token . '">';
+
+            $display_tokenization = $this->supports( 'tokenization' ) && is_checkout() && $this->enabled_saved_cards;
+
+            if ( $display_tokenization ) {
+                $this->tokenization_script();
+                $this->saved_payment_methods();
+            }
+
             $this->elements_form();
+
+            if ( $display_tokenization && ! is_add_payment_method_page() ) {
+                $this->save_payment_method_checkbox();
+            }
+
+            echo '</div>';
         }
 
 		ob_end_flush();
@@ -499,9 +537,14 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 	 * Renders the Hosted fields form.
 	 */
 	public function elements_form() {
-        $temp_token = $this->temp_token();
 		?>
-		<fieldset id="wc-<?php echo esc_attr( $this->id ); ?>-cc-form" class="wc-credit-card-form wc-payment-form" style="background:transparent;" data-token="<?php echo $temp_token; ?>">
+
+        <div id="dna-card-cvc-token-container" class="form-row">
+            <label for="dna-card-cvc-token"><?php esc_html_e( 'Card code (CVC)', 'woocommerce-gateway-dna' ); ?> <span class="required">*</span></label>
+            <div id="dna-card-cvc-token" class="wc-dna-elements-field"></div>
+        </div>
+
+		<fieldset id="wc-<?php echo esc_attr( $this->id ); ?>-cc-form" class="wc-credit-card-form wc-payment-form" style="background:transparent;">
 			<?php do_action( 'woocommerce_credit_card_form_start', $this->id ); ?>
 
             <div class="form-row form-row-wide">
@@ -529,12 +572,14 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
             <div class="clear"></div>
 
-			<!-- Used to display form errors -->
-			<div class="dna-source-errors" role="alert"></div>
 			<?php do_action( 'woocommerce_credit_card_form_end', $this->id ); ?>
 
             <div class="clear"></div>
 		</fieldset>
+
+        <!-- Used to display form errors -->
+        <div class="dna-source-errors" role="alert"></div>
+
 		<?php
 	}
 }

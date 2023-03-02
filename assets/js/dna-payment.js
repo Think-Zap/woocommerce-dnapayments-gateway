@@ -1,6 +1,8 @@
 /* global wc_checkout_params */
 /* global wc_dna_params */
 
+const gateway_id = 'dnapayments'
+
 jQuery( function( $ ) {
 	'use strict';
 
@@ -8,6 +10,7 @@ jQuery( function( $ ) {
 
     const isTestMode = wc_dna_params.is_test_mode === '1';
     const isHostedFields = wc_dna_params.integration_type === 'hosted-fields'
+    const cards = Object.values(wc_dna_params.cards || {})
     let hostedFieldsInstance
 
     const threeDSecureModal = createModal('three-d-secure');
@@ -80,9 +83,7 @@ jQuery( function( $ ) {
     }
 
     function pay({ paymentData, auth }) {
-        window.DNAPayments.configure({
-            isTestMode
-        });
+        window.DNAPayments.configure({ isTestMode, cards });
 
         switch (wc_dna_params.integration_type) {
             case 'hosted-fields':
@@ -112,7 +113,9 @@ jQuery( function( $ ) {
     }
 
     async function createHostedFields() {
-        const $card_form = $('#wc-dnapayments-cc-form');
+        const $card_form = $('#wc-' + gateway_id + '-form');
+        const $payment_token = $('input[name="wc-' + gateway_id + '-payment-token"]');
+        const $tokenized_cvc = $('#dna-card-cvc-token-container')
 
         // if already iframe inserted
         if ($card_form.find('#dna-card-number').has('iframe').length) {
@@ -151,6 +154,10 @@ jQuery( function( $ ) {
                 cvv: {
                     container: $card_form.find('#dna-card-cvc')[0],
                     placeholder: 'CVC'
+                },
+                tokenizedCardCvv: {
+                    container: $card_form.find('#dna-card-cvc-token')[0],
+                    placeholder: 'CVC'
                 }
             }
         }
@@ -167,6 +174,29 @@ jQuery( function( $ ) {
                 threeDSecureModal.hide();
                 formLoader.show();
             });
+
+            function onPaymentTokenChange(selected) {
+                if (!selected || selected === 'new') {
+                    $tokenized_cvc.hide();
+                    hostedFieldsInstance.selectCard(null);
+                } else {
+                    const card = cards.find((c) => String(c.id) === String(selected));
+                    const cvvState = hostedFieldsInstance.getTokenizedCardCvvState(card);
+
+                    if (cvvState === 'required') {
+                        $tokenized_cvc.show();
+                    } else {
+                        $tokenized_cvc.hide();
+                    }
+                    hostedFieldsInstance.selectCard(card);
+                }
+            }
+    
+            onPaymentTokenChange($payment_token.filter(':checked').val());
+            $payment_token.change(function() {
+                onPaymentTokenChange($(this).val());
+            });
+
         } catch (err) {
             cardError.show(err.message);
         }
