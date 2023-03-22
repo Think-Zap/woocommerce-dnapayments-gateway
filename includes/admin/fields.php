@@ -80,14 +80,14 @@ function get_dnapayments_admin_fields() {
          'description' => '',
          'default'     => 'no'
       ),
-       'complete_order_status' => array(
-          'title'       => __( 'For which status to charge order', 'woocommerce-gateway-dna' ),
-          'type'        => 'select',
-          'class'       => 'wc-enhanced-select',
-          'default'     => 'processing',
-          'desc_tip'    => true,
-          'options'     => get_order_statuses(),
-       ),
+      //  'complete_order_status' => array(
+      //     'title'       => __( 'For which status to charge order', 'woocommerce-gateway-dna' ),
+      //     'type'        => 'select',
+      //     'class'       => 'wc-enhanced-select',
+      //     'default'     => 'processing',
+      //     'desc_tip'    => true,
+      //     'options'     => get_order_statuses(),
+      //  ),
       'is_test_mode' => array(
          'title'       => __( 'Test mode', 'woocommerce-gateway-dna' ),
          'label'       => 'Enable Test Mode',
@@ -125,5 +125,5 @@ function get_dnapayments_admin_fields() {
          'type'        => 'textarea',
          'default'     => 'Pay with your credit card via our payment gateway',
       )
-)  ;
+   );
 }

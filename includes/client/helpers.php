@@ -182,7 +182,11 @@ class WC_DNA_Payments_Order_Client_Helpers {
     }
 
     public static function isDNAPaymentOrder(WC_Order $order): bool {
-        return 'dnapayments' === $order->get_payment_method();
+        return in_array($order->get_payment_method(), [
+            'dnapayments',
+            'dnapayments_google_pay',
+            'dnapayments_apple_pay',
+        ]);
     }
 
     public static function saveCardToken( WP_REST_Request $input, $gateway_id ) {

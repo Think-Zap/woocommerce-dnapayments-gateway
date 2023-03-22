@@ -31,7 +31,7 @@ class WC_DNA_Payments_Order_Handler extends WC_DNA_Payments_Gateway {
         ];
 
         if (
-            'dnapayments' === $order->get_payment_method() &&
+            WC_DNA_Payments_Order_Client_Helpers::isDNAPaymentOrder($order) &&
             in_array($next_status, $complete_statuses) &&
             !in_array($previous_status, $complete_statuses)
         ) {
@@ -93,7 +93,7 @@ class WC_DNA_Payments_Order_Handler extends WC_DNA_Payments_Gateway {
         $order = wc_get_order( $order_id );
         $is_finished = $order->get_meta( 'is_finished_payment', true ) === 'yes';
 
-        if ( 'dnapayments' === $order->get_payment_method() ) {
+        if ( WC_DNA_Payments_Order_Client_Helpers::isDNAPaymentOrder($order) ) {
             $paymentMethod = $order->get_meta( 'payment_method', true );
 
             if($paymentMethod === 'paypal' && !WC_DNA_Payments_Order_Admin_Helpers::isValidStatusPayPalStatus($order)) {

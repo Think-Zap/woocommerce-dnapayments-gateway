@@ -11,6 +11,7 @@
 
 define( 'WC_DNA_PLUGIN_PATH', untrailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'WC_DNA_MAIN_FILE', __FILE__ );
+define( 'WC_DNA_ID', 'dnapayments' );
 define( 'WC_DNA_VERSION', '2.1.0' );
 define( 'WC_DNA_MIN_PHP_VER', '5.6.0' );
 define( 'WC_DNA_MIN_WC_VER', '3.0' );
@@ -18,6 +19,8 @@ define( 'WC_DNA_MIN_WC_VER', '3.0' );
 add_filter( 'woocommerce_payment_gateways', 'dnapayments_add_gateway_class' );
 function dnapayments_add_gateway_class( $gateways ) {
 	$gateways[] = 'WC_DNA_Payments_Gateway';
+    $gateways[] = 'WC_DNA_GooglePay_Payments_Gateway';
+    $gateways[] = 'WC_DNA_ApplePay_Payments_Gateway';
 	return $gateways;
 }
 
@@ -68,17 +71,20 @@ function dnapayments_init_gateway_class() {
         return;
     }
 
+    // Add custom dom elements after "Place Order" button
+    add_action('woocommerce_review_order_after_submit', 'add_custom_elements');
 
-	static $gateway;
+    function add_custom_elements() {
+        echo '<div id="dnapayments_apple_pay_container" style="display: none"></div>' .
+            '<div id="dnapayments_google_pay_container" style="display: none"></div>';
+    }
 
-	if ( ! isset( $gateway ) ) {
-        require_once( WC_DNA_PLUGIN_PATH . '/includes/WC_DNA_Payments_Gateway.php' );
-        require_once( WC_DNA_PLUGIN_PATH . '/includes/admin/helpers.php' );
-        require_once( WC_DNA_PLUGIN_PATH . '/includes/client/helpers.php' );
-        require_once( WC_DNA_PLUGIN_PATH . '/includes/admin/handlers.php' );
-		$gateway = new WC_DNA_Payments_Gateway();
-	}
-
-	return $gateway;
+    require_once( WC_DNA_PLUGIN_PATH . '/includes/WC_DNA_Payments_Gateway.php' );
+    require_once( WC_DNA_PLUGIN_PATH . '/includes/payment_methods/WC_DNA_Component_Payments_Gateway.php' );
+    require_once( WC_DNA_PLUGIN_PATH . '/includes/payment_methods/WC_DNA_GooglePay_Payments_Gateway.php' );
+    require_once( WC_DNA_PLUGIN_PATH . '/includes/payment_methods/WC_DNA_ApplePay_Payments_Gateway.php' );
+    require_once( WC_DNA_PLUGIN_PATH . '/includes/admin/helpers.php' );
+    require_once( WC_DNA_PLUGIN_PATH . '/includes/client/helpers.php' );
+    require_once( WC_DNA_PLUGIN_PATH . '/includes/admin/handlers.php' );
 }
 
