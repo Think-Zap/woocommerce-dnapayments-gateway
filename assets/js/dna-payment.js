@@ -41,6 +41,7 @@ jQuery( function( $ ) {
 
     function selectGateway(selectedGateway) {
         const $placeOrderBtn = $checkout_form.find('#place_order');
+        $placeOrderBtn.show();
         googlePay && googlePay.$container.hide();
         applePay && applePay.$container.hide();
 
@@ -230,7 +231,12 @@ jQuery( function( $ ) {
                 
                 paymentMethodObject.create(
                     this.$container[0],
-                    {},
+                    {
+                        amount: 0,
+                        paymentSettings: {
+                            terminalId,
+                        }
+                    },
                     events,
                     tempToken
                 );

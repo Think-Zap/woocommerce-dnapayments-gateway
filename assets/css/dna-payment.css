@@ -47,8 +47,58 @@
     transform: translate(-50%, -50%) scale(1);
 }
 
+#wc-dnapayments-form {
+    text-align: left;
+    font-weight: normal;
+}
+
+#wc-dnapayments-cc-form .form-row {
+    display: block;
+    margin: 0 0 1em 0;
+}
+
+#wc-dnapayments-cc-form .form-row-wide {
+    clear: both;
+    width: 100%;
+}
+
+#wc-dnapayments-cc-form .form-row label {
+    margin: 0;
+}
+
+#wc-dnapayments-form .clear {
+    clear: both;
+}
+
+#wc-dnapayments-form .woocommerce-error {
+    background-color: #e2401c;
+    padding: 1em 1.618em;
+    margin-bottom: 2.617924em;
+    color: #fff;
+    margin-left: 0;
+    border-radius: 2px;
+}
+
+#dnapayments_google_pay_container iframe,
+#dnapayments_apple_pay_container iframe {
+    width: 100%;
+}
+
 @media (min-width: 768px) {
     #dna-card-cvc-token-container {
         width: 75%;
+    }
+
+    #wc-dnapayments-cc-form .form-row-first {
+        width: 47.0588235294%;
+        float: left;
+        margin-right: 5.8823529412%;
+        clear: both;
+    }
+
+    #wc-dnapayments-cc-form .form-row-last {
+        width: 47.0588235294%;
+        float: right;
+        margin-right: 0;
     }
 }
