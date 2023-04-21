@@ -45,6 +45,12 @@ jQuery( function( $ ) {
         googlePay && googlePay.$container.hide();
         applePay && applePay.$container.hide();
 
+        if (['dnapayments', 'dnapayments_google_pay', 'dnapayments_apple_pay'].includes(selectedGateway)) {
+            $checkout_form.find('.dnapayments-footer').show();
+        } else {
+            $checkout_form.find('.dnapayments-footer').hide();
+        }
+
         switch (selectedGateway) {
             case 'dnapayments_google_pay':
                 $placeOrderBtn.hide();

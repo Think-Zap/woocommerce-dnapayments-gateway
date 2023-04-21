@@ -6,13 +6,13 @@
  * Description: Take credit card payments on your store.
  * Author: DNA Payments Integration
  * Author URI: https://www.dnapayments.com
- * Version: 2.1.0
+ * Version: 2.1.1
 */
 
 define( 'WC_DNA_PLUGIN_PATH', untrailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'WC_DNA_MAIN_FILE', __FILE__ );
 define( 'WC_DNA_ID', 'dnapayments' );
-define( 'WC_DNA_VERSION', '2.1.0' );
+define( 'WC_DNA_VERSION', '2.1.1' );
 define( 'WC_DNA_MIN_PHP_VER', '5.6.0' );
 define( 'WC_DNA_MIN_WC_VER', '3.0' );
 
@@ -76,7 +76,8 @@ function dnapayments_init_gateway_class() {
 
     function add_custom_elements() {
         echo '<div id="dnapayments_apple_pay_container" style="display: none"></div>' .
-            '<div id="dnapayments_google_pay_container" style="display: none"></div>';
+            '<div id="dnapayments_google_pay_container" style="display: none"></div>' .
+            '<div class="dnapayments-footer" style="display: none"><p>Powered by </p><img src="' . plugins_url('assets/img/dnapayments-logo.svg', WC_DNA_MAIN_FILE) .'" /></>';
     }
 
     require_once( WC_DNA_PLUGIN_PATH . '/includes/WC_DNA_Payments_Gateway.php' );

@@ -84,6 +84,22 @@
     width: 100%;
 }
 
+.dnapayments-footer {
+    font-weight: normal;
+    text-align: left;
+    margin-top: 1.2em;
+}
+
+.dnapayments-footer p {
+    margin: 0;
+}
+
+.dnapayments-footer img {
+    max-width: 300px;
+    width: 100%;
+    height: auto;
+}
+
 @media (min-width: 768px) {
     #dna-card-cvc-token-container {
         width: 75%;
