@@ -154,9 +154,11 @@ jQuery( function( $ ) {
                 }).then(() => {
                     window.location.href = returnUrl;
                 }).catch((err) => {
-                    cardError.show(err.message);
                     if (err.code !== 'NOT_VALID_CARD_DATA') {
                         hostedFieldsInstance.clear()
+                        cardError.show('Your card has not been authorised, please check the details and retry or contact your bank.');
+                    } else {
+                        cardError.show(err.message)
                     }
                 }).finally(() => {
                     formLoader.hide();
@@ -227,6 +229,10 @@ jQuery( function( $ ) {
                     onError: (err) => {
                         console.error(err)
                         formLoader.hide();
+                        if (err.code !== 1002) {
+                            const message = err.message || 'Your card has not been authorised, please check the details and retry or contact your bank.'
+                            showError( '<div class="woocommerce-error">' + message + '</div>' );
+                        }
                     },
                     onLoad: () => {
                         this.isLoaded = true;
@@ -336,7 +342,7 @@ jQuery( function( $ ) {
             });
 
         } catch (err) {
-            cardError.show(err.message);
+            cardError.show('Your card has not been authorised, please check the details and retry or contact your bank.');
         }
 
     }
