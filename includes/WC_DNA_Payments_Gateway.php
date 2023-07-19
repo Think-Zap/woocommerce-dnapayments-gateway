@@ -107,7 +107,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
             return !empty($result) && $result['success'];
         } catch (Exception $e) {
-            $logger->error(json_encode($e));
+            $logger->error('Code: ' . $e->getCode() . '; Message: ' . $e->getMessage());
             return false;
         }
 
@@ -164,7 +164,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
             return !empty($result) && $result['success'];
         } catch (Exception $e) {
-            $logger->error(json_encode($e));
+            $logger->error('Code: ' . $e->getCode() . '; Message: ' . $e->getMessage());
             return false;
         }
 
