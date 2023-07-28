@@ -236,12 +236,20 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
      public function success_webhook( WP_REST_Request $input ) {
 
         if (!empty($input) && !empty($input['invoiceId']) && $input['success'] && $this->dnaPayment::isValidSignature($input, $this->client_secret)) {
+            
+            $orderId = $input->get_query_params()['orderId'];
+            if (!isset($orderId) || empty($orderId)) {
+                $orderId = WC_DNA_Payments_Order_Admin_Helpers::findOrderByOrderNumber($input['invoiceId']);
+            }
 
-            $invoiceId = WC_DNA_Payments_Order_Admin_Helpers::findOrderByOrderNumber($input['invoiceId']);
-            $order = wc_get_order( $invoiceId );
+            $order = wc_get_order( $orderId );
+
+            if (!$order) {
+                throw new Error('Not found order by id ' . $orderId);
+            }
 
             if(!WC_DNA_Payments_Order_Client_Helpers::isDNAPaymentOrder($order)) {
-                return;
+                throw new Error('Order processed by payment method ' . $order->get_payment_method());
             }
 
             $isCompletedOrder = $order->get_status() !== 'pending' && $order->get_status() !== 'failed';;
@@ -279,10 +287,19 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
         if ($input && !empty($input['invoiceId']) && !$input['success'] && $this->dnaPayment::isValidSignature($input, $this->client_secret)) {
 
-            $invoiceId = WC_DNA_Payments_Order_Admin_Helpers::findOrderByOrderNumber($input['invoiceId']);
-            $order = wc_get_order( $invoiceId );
+            $orderId = $input->get_query_params()['orderId'];
+            if (!isset($orderId) || empty($orderId)) {
+                $orderId = WC_DNA_Payments_Order_Admin_Helpers::findOrderByOrderNumber($input['invoiceId']);
+            }
+
+            $order = wc_get_order( $orderId );
+
+            if (!$order) {
+                throw new Error('Not found order by id ' . $orderId);
+            }
+
             if(!WC_DNA_Payments_Order_Client_Helpers::isDNAPaymentOrder($order)) {
-                return;
+                throw new Error('Order processed by payment method ' . $order->get_payment_method());
             }
 
             $isCompletedOrder = $order->get_status() !== 'pending';
@@ -458,8 +475,8 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 'terminalId' => $this->terminal,
                 'returnUrl' => $this->getBackLink($order),
                 'failureReturnUrl' => $this->getFailureBackLink(),
-                'callbackUrl' => get_rest_url(null, 'dnapayments/success'),
-                'failureCallbackUrl' => get_rest_url(null, 'dnapayments/failure')
+                'callbackUrl' => add_query_arg( array('orderId' => $order_id), get_rest_url(null, 'dnapayments/success') ),
+                'failureCallbackUrl' => add_query_arg( array('orderId' => $order_id), get_rest_url(null, 'dnapayments/failure') )
             ],
             'customerDetails' => [
                 'email' => $order->get_billing_email(),

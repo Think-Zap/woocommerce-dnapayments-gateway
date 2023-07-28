@@ -6,13 +6,13 @@
  * Description: Take credit card payments on your store.
  * Author: DNA Payments Integration
  * Author URI: https://www.dnapayments.com
- * Version: 2.1.2
+ * Version: 2.1.3
 */
 
 define( 'WC_DNA_PLUGIN_PATH', untrailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'WC_DNA_MAIN_FILE', __FILE__ );
 define( 'WC_DNA_ID', 'dnapayments' );
-define( 'WC_DNA_VERSION', '2.1.2' );
+define( 'WC_DNA_VERSION', '2.1.3' );
 define( 'WC_DNA_MIN_PHP_VER', '5.6.0' );
 define( 'WC_DNA_MIN_WC_VER', '3.0' );
 
