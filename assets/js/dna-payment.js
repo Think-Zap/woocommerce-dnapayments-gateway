@@ -205,7 +205,7 @@ jQuery( function( $ ) {
 
                 const events = {
                     onClick: () => {
-                        const amount = parseFloat(jQuery('.order-total .woocommerce-Price-amount.amount').text().replace(/[^\d.-]/g, ''));
+                        const amount = parseFloat(jQuery('.order-total .woocommerce-Price-amount.amount').first().text().replace(/[^\d.-]/g, ''));
                         return {
                             paymentData: {
                                 amount,
