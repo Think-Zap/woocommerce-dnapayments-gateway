@@ -243,6 +243,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             }
 
             $order = wc_get_order( $orderId );
+            $status = $order->get_status();
 
             if (!$order) {
                 throw new Error('Not found order by id ' . $orderId);
@@ -252,7 +253,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 throw new Error('Order processed by payment method ' . $order->get_payment_method());
             }
 
-            $isCompletedOrder = $order->get_status() !== 'pending' && $order->get_status() !== 'failed';;
+            $isCompletedOrder = $status !== 'pending' && $status !== 'failed';;
             if($isCompletedOrder && !empty($input['paypalCaptureStatus'])) {
                 $this->savePayPalOrderDetail($order, $input, true);
             } else {
@@ -268,10 +269,18 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 $order->update_meta_data('rrn', $input['rrn']);
                 $order->update_meta_data('payment_method', $input['paymentMethod']);
                 $order->update_meta_data('is_finished_payment', $input['settled'] ? 'yes' : 'no');
+
                 if(!empty($input['paypalCaptureStatus'])) {
                     $this->savePayPalOrderDetail($order, $input, false);
                 }
-                $order->reduce_order_stock();
+
+                $manage_stock_option = get_option('woocommerce_manage_stock');
+                // if the order status changed from pending to processing (on-hold), woocommerce automatically reduces stock
+                if ($manage_stock_option !== 'yes' || $status !== 'pending') {
+                    $order->reduce_order_stock();
+                    $order->add_order_note( sprintf( __( 'DNA Payments reduced order stock by transaction (Transaction ID: %s)', 'woocommerce-gateway-dna' ), $input['id']) );
+                }
+
                 $order->save();
             }
 
