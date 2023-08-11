@@ -110,7 +110,8 @@ class WC_DNA_Payments_Order_Client_Helpers {
             'addressLine1'  => $order->get_billing_address_1(),
             'addressLine2'  => $order->get_billing_address_2(),
             'city'       => $order->get_billing_city(),
-            'region'      => strlen($state) >= 0 && strlen($state) <= 3 ? $state : '',
+            // User can write text that does not match ISO 3166 state code
+            // 'region'      => strlen($state) >= 0 && strlen($state) <= 3 ? $state : '',
             'postalCode'   => $order->get_billing_postcode(),
             'phone'      => $order->get_billing_phone(),
             'country'    => $order->get_billing_country()
@@ -127,7 +128,8 @@ class WC_DNA_Payments_Order_Client_Helpers {
             'addressLine1'  => $order->get_shipping_address_1(),
             'addressLine2'  => $order->get_shipping_address_2(),
             'city'       => $order->get_shipping_city(),
-            'region'      => strlen($state) >= 0 && strlen($state) <= 3 ? $state : '',
+            // User can write text that does not match ISO 3166 state code
+            // 'region'      => strlen($state) >= 0 && strlen($state) <= 3 ? $state : '',
             'postalCode'   => $order->get_shipping_postcode(),
             'phone'      => self::getShippingPhone($order),
             'country'    => $order->get_shipping_country()

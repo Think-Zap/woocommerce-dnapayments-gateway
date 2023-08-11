@@ -229,7 +229,10 @@ jQuery( function( $ ) {
                     onError: (err) => {
                         console.error(err)
                         formLoader.hide();
-                        if (err.code !== 1002) {
+                        if ([
+                            1002, // Failed to initialize the Google / Apple Pay button
+                            1003  // Failed to validate the Google / Apple Pay session
+                        ].indexOf(err.code) < 0) {
                             const message = err.message || 'Your card has not been authorised, please check the details and retry or contact your bank.'
                             showError( '<div class="woocommerce-error">' + message + '</div>' );
                         }

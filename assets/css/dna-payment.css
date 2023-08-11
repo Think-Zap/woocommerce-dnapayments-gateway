@@ -100,6 +100,10 @@
     height: auto;
 }
 
+.dna-payments-hosted-field-invalid {
+    border-color: #dc3545;
+}
+
 @media (min-width: 768px) {
     #dna-card-cvc-token-container {
         width: 75%;
