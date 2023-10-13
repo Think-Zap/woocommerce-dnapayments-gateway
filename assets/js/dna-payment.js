@@ -195,7 +195,7 @@ jQuery( function( $ ) {
                 this.$container = findContainer();
 
                 this.$listItem.hide();
-                this.$container.html('');
+                this.$container.css('height', '46px').html('');
 
                 const fetchPaymentData = async () => {
                     const { paymentData, auth } = await processPayment();

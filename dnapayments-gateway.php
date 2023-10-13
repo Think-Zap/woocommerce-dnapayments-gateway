@@ -77,7 +77,7 @@ function dnapayments_init_gateway_class() {
     function add_custom_elements() {
         echo '<div id="dnapayments_apple_pay_container" style="display: none"></div>' .
             '<div id="dnapayments_google_pay_container" style="display: none"></div>' .
-            '<div class="dnapayments-footer" style="display: none"><p>Powered by </p><img src="' . plugins_url('assets/img/dnapayments-logo.svg', WC_DNA_MAIN_FILE) .'" /></>';
+            '<div class="dnapayments-footer" style="display: none"><p>Powered by </p><img src="' . plugins_url('assets/img/dnapayments-logo.svg', WC_DNA_MAIN_FILE) .'" /></div>';
     }
 
     require_once( WC_DNA_PLUGIN_PATH . '/includes/WC_DNA_Payments_Gateway.php' );
