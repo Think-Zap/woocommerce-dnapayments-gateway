@@ -14,6 +14,12 @@ require_once WC_DNA_PLUGIN_PATH . '/includes/admin/fields.php';
 class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
     /**
+	 * True if the gateway shows fields on the checkout.
+	 *
+	 * @var bool
+	 */
+	public $has_fields;
+    /**
      * @var bool
      */
     public $is_test_mode;
@@ -56,6 +62,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         $this->enabled = $this->get_option( 'enabled' );
         $this->is_test_mode = 'yes' === $this->get_option( 'is_test_mode' );
         $this->integration_type = $this->get_option( 'integration_type' );
+        $this->has_fields = $this->integration_type == 'hosted-fields';
         $this->enabled_saved_cards = 'yes' === $this->get_option( 'enabled_saved_cards' );
         $this->client_id = $this->is_test_mode ? $this->get_option( 'test_client_id' ) : $this->get_option( 'client_id' );
         $this->client_secret = $this->is_test_mode ? $this->get_option( 'test_client_secret' ) : $this->get_option( 'client_secret' );
