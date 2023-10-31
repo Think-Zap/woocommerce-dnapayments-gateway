@@ -16,7 +16,7 @@ jQuery( function( $ ) {
     const availableGateways = Object.keys(wc_dna_params.available_gateways || {})
     const cards = Object.values(wc_dna_params.cards || {});
 
-    let hostedFieldsInstance
+    let hostedFieldsInstance, hostedFieldsInstanceId
 
     const threeDSecureModal = createModal('three-d-secure');
     const formLoader = createFormLoader();
@@ -70,7 +70,7 @@ jQuery( function( $ ) {
         selectGateway($('input[name="payment_method"]:checked').val());
 
         if (isHostedFields) {
-            createHostedFields();
+            debounce(createHostedFields, 200)();
         }
     });
 
@@ -137,7 +137,7 @@ jQuery( function( $ ) {
                 });
             } catch (e) {
                 reject()
-                console.log(e)
+                console.error(e)
             }
         })
     }
@@ -268,6 +268,8 @@ jQuery( function( $ ) {
         if ($card_form.find('#dna-card-number').has('iframe').length) {
             return;
         }
+        const instanceId = (new Date()).getTime()
+        hostedFieldsInstanceId = instanceId
 
         const options = {
             isTest: isTestMode,
@@ -308,9 +310,10 @@ jQuery( function( $ ) {
                 }
             }
         }
-    
-        try {
+        
+        try {            
             hostedFieldsInstance = await window.dnaPayments.hostedFields.create(options);
+            if (instanceId !== hostedFieldsInstanceId) return
 
             hostedFieldsInstance.on('dna-payments-three-d-secure-show', (data) => {
                 formLoader.hide();
@@ -345,9 +348,24 @@ jQuery( function( $ ) {
             });
 
         } catch (err) {
+            if (instanceId !== hostedFieldsInstanceId) return
+            console.error(err);
             cardError.show('Your card has not been authorised, please check the details and retry or contact your bank.');
         }
 
+    }
+
+    function debounce(func, delay) {
+        let timeoutId
+
+        return function () {
+            const context = this
+            const args = arguments
+            clearTimeout(timeoutId)
+            timeoutId = setTimeout(() => {
+                func.apply(context, args)
+            }, delay)
+        }
     }
 
     function createModal(id) {
