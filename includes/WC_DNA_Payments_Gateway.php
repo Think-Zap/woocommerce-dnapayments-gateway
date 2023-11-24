@@ -335,7 +335,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
     }
 
     public function add_notice($message, $notice_type = 'success', $data = array()) {
-        if(function_exists(wc_add_notice)) {
+        if(function_exists('wc_add_notice')) {
             wc_add_notice($message, $notice_type, $data);
         }
     }

@@ -44,7 +44,7 @@ class WC_DNA_Payments_Order_Client_Helpers {
      * @param  integer $limit Limit size in characters.
      * @return string
      */
-    protected function limitLength( $string, $limit = 127 ) {
+    public static function limitLength( $string, $limit = 127 ) {
         $str_limit = $limit - 3;
         if ( function_exists( 'mb_strimwidth' ) ) {
             if ( mb_strlen( $string ) > $limit ) {
@@ -65,7 +65,7 @@ class WC_DNA_Payments_Order_Client_Helpers {
      * @param  WC_Order $order Order object.
      * @return string
      */
-    protected function getOrderItemNames( $order ) {
+    public static function getOrderItemNames( $order ) {
         $item_names = array();
 
         foreach ( $order->get_items() as $item ) {
