@@ -3,16 +3,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-function get_order_statuses() {
-   $statuses = wc_get_order_statuses();
-   $statuses_without_prefix = [];
-   foreach ($statuses as $key => $value) {
-      $key__without_prefix = str_replace('wc-', '', $key);
-      $statuses_without_prefix[$key__without_prefix] = $value;
-   }
-   return $statuses_without_prefix;
-}
-
 function get_dnapayments_admin_fields() {
    return array(
       'enabled' => array(
@@ -80,14 +70,13 @@ function get_dnapayments_admin_fields() {
          'description' => '',
          'default'     => 'no'
       ),
-      //  'complete_order_status' => array(
-      //     'title'       => __( 'For which status to charge order', 'woocommerce-gateway-dna' ),
-      //     'type'        => 'select',
-      //     'class'       => 'wc-enhanced-select',
-      //     'default'     => 'processing',
-      //     'desc_tip'    => true,
-      //     'options'     => get_order_statuses(),
-      //  ),
+      'enable_order_complete' => array(
+         'title'       => __( 'Order status upon successful payment', 'woocommerce-gateway-dna' ),
+         'label'       => __( 'Set to "Completed"', 'woocommerce-gateway-dna' ),
+         'type'        => 'checkbox',
+         'description' => 'Mark this checkbox to automatically set order status to "Completed" upon successful payment. Valid only for "Sale" transactions.',
+         'default'     => 'no'
+      ),
       'is_test_mode' => array(
          'title'       => __( 'Test mode', 'woocommerce-gateway-dna' ),
          'label'       => 'Enable Test Mode',

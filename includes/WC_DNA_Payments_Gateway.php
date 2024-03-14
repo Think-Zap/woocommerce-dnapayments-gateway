@@ -277,6 +277,10 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 if($input['settled']) {
                     $order->payment_complete();
                     $order->add_order_note( sprintf( __( 'DNA Payments transaction complete (Transaction ID: %s)', 'woocommerce-gateway-dna' ), $input['id']) );
+
+                    if ( 'yes' === $this->get_option( 'enable_order_complete' ) ) {
+                        $order->update_status('completed');
+                    }
                 } else {
                     $order->update_status('on-hold');
                     $order->add_order_note( sprintf( __( 'DNA Payments awaiting payment complete (Transaction ID: %s)', 'woocommerce-gateway-dna' ), $input['id']) );

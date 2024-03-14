@@ -26,8 +26,7 @@ class WC_DNA_Payments_Order_Handler extends WC_DNA_Payments_Gateway {
 
         $complete_statuses = [
             'processing',
-            'completed',
-            $this->get_option( 'complete_order_status' )
+            'completed'
         ];
 
         if (
