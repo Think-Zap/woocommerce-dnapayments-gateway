@@ -80,8 +80,6 @@ function dnapayments_init_gateway_class() {
             '<div class="dnapayments-footer" style="display: none"><p>Powered by </p><img src="' . plugins_url('assets/img/dnapayments-logo.svg', WC_DNA_MAIN_FILE) .'" /></div>';
     }
 
-    echo 'WC_DNA_PLUGIN_PATH: ' . WC_DNA_PLUGIN_PATH;
-
     require_once( WC_DNA_PLUGIN_PATH . '/includes/WC_DNA_Payments_Gateway.php' );
     require_once( WC_DNA_PLUGIN_PATH . '/includes/payment_methods/WC_DNA_Component_Payments_Gateway.php' );
     require_once( WC_DNA_PLUGIN_PATH . '/includes/payment_methods/WC_DNA_GooglePay_Payments_Gateway.php' );
