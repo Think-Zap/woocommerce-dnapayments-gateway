@@ -76,8 +76,10 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
         $this->dnaPayment = new DNAPayments\DNAPayments($this->get_config());
 
-        $this->supports = array( 'products', 'refunds', 'tokenization' );
-
+        $this->supports = array( 'products', 'refunds' );
+        if ( $this->enabled_saved_cards ) {
+            array_push($this->supports, 'tokenization' );
+        }
     }
 
     public function get_config() {
@@ -253,14 +255,23 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
         if (!empty($input) && !empty($input['invoiceId']) && $input['success'] && $this->dnaPayment::isValidSignature($input, $this->client_secret)) {
             
-            $orderId = $input->get_query_params()['orderId'];
+            $orderId = null;
+            if (isset($input['merchantCustomData'])) {
+                try {
+                    $customData = json_decode($input['merchantCustomData']);
+                    $orderId = $customData->orderId;
+                } catch (Exception $e) {
+                    $orderId = null;
+                }
+            }
+
             if (!isset($orderId) || empty($orderId)) {
                 $orderId = WC_DNA_Payments_Order_Admin_Helpers::findOrderByOrderNumber($input['invoiceId']);
             }
 
             $order = wc_get_order( $orderId );
             $status = $order->get_status();
-
+            
             if (!$order) {
                 throw new Error('Not found order by id ' . $orderId);
             }
@@ -269,7 +280,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 throw new Error('Order processed by payment method ' . $order->get_payment_method());
             }
 
-            $isCompletedOrder = $status !== 'pending' && $status !== 'failed';;
+            $isCompletedOrder = $status !== 'pending' && $status !== 'failed';
             if($isCompletedOrder && !empty($input['paypalCaptureStatus'])) {
                 $this->savePayPalOrderDetail($order, $input, true);
             } else {
@@ -304,7 +315,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 $order->save();
             }
 
-            if ($this->enabled_saved_cards && $order->get_meta('save_payment_method_requested', true) == 'yes') {
+            if ($this->enabled_saved_cards && ($order->get_meta('save_payment_method_requested', true) == 'yes' || $input['storeCardOnFile'])) {
                 WC_DNA_Payments_Order_Client_Helpers::saveCardToken( $input, $this->id );
             }
         } else {
@@ -377,6 +388,8 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
     public function payment_scripts() {
         $prefix = $this->is_test_mode ? 'test-' : '';
+        $current_user_id = get_current_user_id();
+        $is_guest = !isset($current_user_id) || empty($current_user_id) || $current_user_id === '0';
         
         if ( ! is_cart() && ! is_checkout() && ! isset( $_GET['pay_for_order'] ) && ! is_add_payment_method_page()) {
             return;
@@ -393,8 +406,8 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         wp_register_style( 'dna_styles', plugins_url( 'assets/css/dna-payment.css', WC_DNA_MAIN_FILE ), [], WC_DNA_VERSION );
 		wp_enqueue_style( 'dna_styles' );
 
-        wp_enqueue_script( 'dna-payment-api', 'https://pay.dnapayments.com/checkout/payment-api.js' , array('jquery'), WC_DNA_VERSION, true );
-        wp_enqueue_script( 'dna-hosted-fields', 'https://cdn.dnapayments.com/js/hosted-fields/hosted-fields.js' , array('jquery'), WC_DNA_VERSION, true );
+        wp_enqueue_script( 'dna-payment-api', 'https://' . $prefix . 'pay.dnapayments.com/checkout/payment-api.js' , array('jquery'), WC_DNA_VERSION, true );
+        wp_enqueue_script( 'dna-hosted-fields', 'https://' . $prefix . 'cdn.dnapayments.com/js/hosted-fields/hosted-fields.js' , array('jquery'), WC_DNA_VERSION, true );
 
         if (is_add_payment_method_page()) {
             wp_register_script('woocommerce_dna_payment', plugins_url('assets/js/dna-add-payment-method.js', WC_DNA_MAIN_FILE), array('jquery', 'dna-payment-api', 'dna-hosted-fields') , WC_DNA_VERSION, true);
@@ -402,7 +415,8 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             $dna_params = array(
                 'is_test_mode' => $this->is_test_mode,
                 'integration_type' => $this->integration_type,
-                'cards' => $this->enabled_saved_cards ? WC_DNA_Payments_Order_Client_Helpers::getCardTokens( get_current_user_id(), $this->id ) : []
+                'allowSavingCards' => $this->enabled_saved_cards && !$is_guest,
+                'cards' => $this->enabled_saved_cards ? WC_DNA_Payments_Order_Client_Helpers::getCardTokens( $current_user_id, $this->id ) : []
             );
         } else {
             wp_enqueue_script( 'dna-google-pay', 'https://' . $prefix . 'pay.dnapayments.com/components/google-pay/google-pay-component.js', array('dna-payment-api'), WC_DNA_VERSION, true );
@@ -417,7 +431,8 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 'terminal_id' => $this->terminal,
                 'current_currency_code' => get_woocommerce_currency(),
                 'available_gateways' => WC()->payment_gateways->get_available_payment_gateways(),
-                'cards' => $this->enabled_saved_cards ? WC_DNA_Payments_Order_Client_Helpers::getCardTokens( get_current_user_id(), $this->id ) : []
+                'allowSavingCards' => $this->enabled_saved_cards && !$is_guest,
+                'cards' => $this->enabled_saved_cards ? WC_DNA_Payments_Order_Client_Helpers::getCardTokens( $current_user_id, $this->id ) : []
             );
         }        
 
@@ -518,8 +533,8 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 'terminalId' => $this->terminal,
                 'returnUrl' => $this->getBackLink($order),
                 'failureReturnUrl' => $this->getFailureBackLink(),
-                'callbackUrl' => add_query_arg( array('orderId' => $order_id), get_rest_url(null, 'dnapayments/success') ),
-                'failureCallbackUrl' => add_query_arg( array('orderId' => $order_id), get_rest_url(null, 'dnapayments/failure') )
+                'callbackUrl' => get_rest_url(null, 'dnapayments/success'),
+                'failureCallbackUrl' => get_rest_url(null, 'dnapayments/failure')
             ],
             'customerDetails' => [
                 'email' => $order->get_billing_email(),
@@ -532,7 +547,8 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 ]
             ],
             'amountBreakdown' => WC_DNA_Payments_Order_Client_Helpers::getAmountBreakdown($order),
-            'orderLines' => $orderLines
+            'orderLines' => $orderLines,
+            'merchantCustomData' => json_encode(array('orderId' => $order_id))
         ];
 
         if ( isset($transactionType) && !empty($transactionType) && $transactionType != 'default' ) {

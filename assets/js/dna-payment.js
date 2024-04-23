@@ -9,6 +9,7 @@ jQuery( function( $ ) {
     const $checkout_form = $( 'form.woocommerce-checkout' );
 
     const isTestMode = wc_dna_params.is_test_mode === '1';
+    const allowSavingCards = wc_dna_params.allowSavingCards === '1';
     const isHostedFields = wc_dna_params.integration_type === 'hosted-fields';
     const tempToken = wc_dna_params.temp_token;
     const currencyCode = wc_dna_params.current_currency_code;
@@ -16,7 +17,7 @@ jQuery( function( $ ) {
     const availableGateways = Object.keys(wc_dna_params.available_gateways || {})
     const cards = Object.values(wc_dna_params.cards || {});
 
-    let hostedFieldsInstance, hostedFieldsInstanceId
+    let hostedFieldsInstance, hostedFieldsInstanceId;
 
     const threeDSecureModal = createModal('three-d-secure');
     const formLoader = createFormLoader();
@@ -143,7 +144,7 @@ jQuery( function( $ ) {
     }
 
     function pay({ paymentData, auth }) {
-        window.DNAPayments.configure({ isTestMode, cards });
+        window.DNAPayments.configure({ isTestMode, cards, allowSavingCards });
 
         switch (wc_dna_params.integration_type) {
             case 'hosted-fields':
