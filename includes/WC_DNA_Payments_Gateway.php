@@ -281,9 +281,8 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             }
 
             $isCompletedOrder = $status !== 'pending' && $status !== 'failed';
-            if($isCompletedOrder && !empty($input['paypalCaptureStatus'])) {
-                $this->savePayPalOrderDetail($order, $input, true);
-            } else {
+
+            if(!$isCompletedOrder) {
                 $order->set_transaction_id($input['id']);
                 if($input['settled']) {
                     $order->payment_complete();
@@ -313,6 +312,8 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 }
 
                 $order->save();
+            } else if (!empty($input['paypalCaptureStatus'])) {
+                $this->savePayPalOrderDetail($order, $input, true);
             }
 
             if ($this->enabled_saved_cards && ($order->get_meta('save_payment_method_requested', true) == 'yes' || $input['storeCardOnFile'])) {
@@ -343,14 +344,15 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             }
 
             $isCompletedOrder = $order->get_status() !== 'pending';
-            if($isCompletedOrder && !empty($input['paypalCaptureStatus'])) {
-                $this->savePayPalOrderDetail($order, $input, true);
-            } else {
+            
+            if (!$isCompletedOrder) {
                 $order->update_status('failed', 'Payment failed');
                 if(!empty($input['paypalCaptureStatus'])) {
                     $this->savePayPalOrderDetail($order, $input, false);
                 }
                 $order->save();
+            } else if (!empty($input['paypalCaptureStatus'])) {
+                $this->savePayPalOrderDetail($order, $input, true);
             }
 
         } else {
