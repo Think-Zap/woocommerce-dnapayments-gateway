@@ -198,6 +198,17 @@ jQuery( function( $ ) {
                 this.$listItem.hide();
                 this.$container.css('height', '46px').html('');
 
+                let totalAmount = 0;
+
+                try {
+                    const total = Number(wc_dna_params.total.total);
+                    if (total && !isNaN(total)) {
+                        totalAmount = total;
+                    }
+                } catch (err) {
+                    console.error(err);
+                }
+
                 const fetchPaymentData = async () => {
                     const { paymentData, auth } = await processPayment();
                     this.returnUrl = paymentData.paymentSettings.returnUrl;
@@ -207,9 +218,10 @@ jQuery( function( $ ) {
                 const events = {
                     onClick: () => {
                         const amount = parseFloat(jQuery('.order-total .woocommerce-Price-amount.amount').first().text().replace(/[^\d.-]/g, ''));
+
                         return {
                             paymentData: {
-                                amount,
+                                amount: (amount && !isNaN(amount) ? amount : totalAmount),
                                 currency: currencyCode,
                                 paymentSettings: {
                                     terminalId,
@@ -248,7 +260,7 @@ jQuery( function( $ ) {
                 paymentMethodObject.create(
                     this.$container[0],
                     {
-                        amount: 0,
+                        amount: totalAmount,
                         paymentSettings: {
                             terminalId,
                         }

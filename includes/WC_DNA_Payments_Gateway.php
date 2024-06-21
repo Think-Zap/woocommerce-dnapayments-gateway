@@ -405,6 +405,9 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             return;
         }
 
+        $cart = WC()->cart;
+        $total = $cart->is_empty() ? [ 'total' => 0 ] : $cart->get_totals();
+
         wp_register_style( 'dna_styles', plugins_url( 'assets/css/dna-payment.css', WC_DNA_MAIN_FILE ), [], WC_DNA_VERSION );
 		wp_enqueue_style( 'dna_styles' );
 
@@ -434,6 +437,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 'current_currency_code' => get_woocommerce_currency(),
                 'available_gateways' => WC()->payment_gateways->get_available_payment_gateways(),
                 'allowSavingCards' => $this->enabled_saved_cards && !$is_guest,
+                'total' => $total,
                 'cards' => $this->enabled_saved_cards ? WC_DNA_Payments_Order_Client_Helpers::getCardTokens( $current_user_id, $this->id ) : []
             );
         }        
