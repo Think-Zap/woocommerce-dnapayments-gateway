@@ -3,10 +3,7 @@
     "description": "DNA payments library for php",
     "license": "MIT",
     "type": "library",
-    "version": "1.1.4",
-    "require": {
-        "rmccue/requests": "^1.7"
-    },
+    "version": "2.0.0",
     "authors": [
         {
             "name": "Alikhan Izbergenov",
@@ -17,5 +14,11 @@
         "psr-4": {
             "DNAPayments\\": "lib/"
         }
+    },
+    "require": {
+        "guzzlehttp/guzzle": "^7.8"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.1"
     }
 }
