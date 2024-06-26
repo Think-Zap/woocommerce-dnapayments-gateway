@@ -1,0 +1,65 @@
+/**
+ * External dependencies
+ */
+import { registerPaymentMethod } from '@woocommerce/blocks-registry'
+import { __ } from '@wordpress/i18n'
+import { getPaymentMethodData } from '@woocommerce/settings'
+import { decodeEntities } from '@wordpress/html-entities'
+import { RawHTML } from '@wordpress/element'
+
+/**
+ * Internal dependencies
+ */
+import { CONTAINER_IDS, GATEWAY_ID_APPLE_PAY, TEXT_DOMAIN } from './constants'
+import { PaymentComponent } from './components/payment-component'
+
+const settings = getPaymentMethodData(GATEWAY_ID_APPLE_PAY, {})
+const defaultLabel = __('Apple Pay by DNA Payments', TEXT_DOMAIN)
+const label = decodeEntities(settings?.title || '') || defaultLabel
+
+const Label = (props) => {
+    const { PaymentMethodLabel } = props.components
+    return <PaymentMethodLabel text={label} />
+}
+
+/**
+ * Content component
+ */
+const Content = (props) => {
+    return <RawHTML>{decodeEntities(settings.description || '')}</RawHTML>
+}
+
+/**
+ * Apple pay button
+ */
+const ApplePayButton = (props) => {
+    return (
+        <PaymentComponent
+            componentInstance={window.DNAPayments.ApplePayComponent}
+            gatewayId={GATEWAY_ID_APPLE_PAY}
+            containerId={CONTAINER_IDS.applepay}
+            errorMessage={__(
+                'Apple Pay payments are not supported in your current browser. Please use Safari on a compatible Apple device to complete your transaction.',
+                TEXT_DOMAIN,
+            )}
+            props={props}
+        />
+    )
+}
+
+/**
+ */
+const dnapaymentsApplePayPaymentMethod = {
+    name: GATEWAY_ID_APPLE_PAY,
+    label: <Label />,
+    content: <ApplePayButton />,
+    edit: <Content />,
+    canMakePayment: () => true,
+    ariaLabel: label,
+    supports: {
+        features: settings?.supports ?? [],
+    },
+    placeOrderButtonLabel: label,
+}
+
+registerPaymentMethod(dnapaymentsApplePayPaymentMethod)

@@ -67,19 +67,22 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         $this->client_id = $this->is_test_mode ? $this->get_option( 'test_client_id' ) : $this->get_option( 'client_id' );
         $this->client_secret = $this->is_test_mode ? $this->get_option( 'test_client_secret' ) : $this->get_option( 'client_secret' );
         $this->terminal = $this->is_test_mode ? $this->get_option( 'test_terminal' ) : $this->get_option('terminal');
+
+        // This action hook saves the settings
         add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
         add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts') );
-        load_plugin_textdomain( 'woocommerce-gateway-dna', false, dirname( plugin_basename( __FILE__ ) ) . '/languages/' );
 
         add_action( 'rest_api_init', array( $this, 'register_routes' ));
         add_action('wp_ajax_add_card_payment_data', array($this, 'add_card_payment_data'));
+        add_action('wp_ajax_get_payment_and_auth_data', array($this, 'get_payment_and_auth_data'));
+        add_action('wp_ajax_nopriv_get_payment_and_auth_data', array($this, 'get_payment_and_auth_data'));
 
         $this->dnaPayment = new DNAPayments\DNAPayments($this->get_config());
 
         $this->supports = array( 'products', 'refunds' );
         if ( $this->enabled_saved_cards ) {
             array_push($this->supports, 'tokenization' );
-        }
+        }        
     }
 
     public function get_config() {
@@ -202,11 +205,6 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             'permission_callback' => '__return_true'
         ) );
 
-        register_rest_route( 'dnapayments', 'failure-page', array(
-            'methods'  => WP_REST_Server::READABLE,
-            'callback' => array( $this, 'fail_page_webhook'),
-            'permission_callback' => '__return_true'
-        ) );
     }
 
     private function savePayPalOrderDetail(WC_Order $order, $input, $isAddOrderNode) {
@@ -251,15 +249,17 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         $order->save();
     }
 
-    public function success_webhook( WP_REST_Request $input ) {
+    public function success_webhook( $input ) {
 
         if (!empty($input) && !empty($input['invoiceId']) && $input['success'] && $this->dnaPayment::isValidSignature($input, $this->client_secret)) {
             
             $orderId = null;
+            $storeCardOnFile = false;
             if (isset($input['merchantCustomData'])) {
                 try {
-                    $customData = json_decode($input['merchantCustomData']);
-                    $orderId = $customData->orderId;
+                    $customData         = json_decode($input['merchantCustomData']);
+                    $orderId            = $customData->orderId;
+                    $storeCardOnFile    = $customData->storeCardOnFile;
                 } catch (Exception $e) {
                     $orderId = null;
                 }
@@ -316,7 +316,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 $this->savePayPalOrderDetail($order, $input, true);
             }
 
-            if ($this->enabled_saved_cards && ($order->get_meta('save_payment_method_requested', true) == 'yes' || $input['storeCardOnFile'])) {
+            if ($this->enabled_saved_cards && ($order->get_meta('save_payment_method_requested', true) == 'yes' || $input['storeCardOnFile'] || $storeCardOnFile)) {
                 WC_DNA_Payments_Order_Client_Helpers::saveCardToken( $input, $this->id );
             }
         } else {
@@ -378,20 +378,35 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         }
     }
 
-    public function fail_page_webhook() {
-        $this->add_notice( __('Oups! Payment failed! Please, try later...', 'woocommerce-gateway-dna'), 'error');
-        wp_redirect( get_permalink( wc_get_page_id( 'cart' ) ) );
-        exit();
-    }
-
     public function init_form_fields(){
         $this->form_fields = get_dnapayments_admin_fields();
+    }
+
+    public function get_settings_for_frontend() {
+        $current_user_id = get_current_user_id();
+        $is_guest = !isset($current_user_id) || empty($current_user_id) || $current_user_id === '0';
+
+        return array(
+            'is_test_mode' => $this->is_test_mode,
+            'integration_type' => $this->integration_type,
+            'temp_token' => $this->temp_token(),
+            'terminal_id' => $this->terminal,
+            'current_currency_code' => get_woocommerce_currency(),
+            'available_gateways' => WC()->payment_gateways->get_available_payment_gateways(),
+            'allow_saving_cards' => $this->enabled_saved_cards && !$is_guest,
+            'cards' => WC_DNA_Payments_Order_Client_Helpers::getCardTokens( $current_user_id, $this->id )
+        );
     }
 
     public function payment_scripts() {
         $prefix = $this->is_test_mode ? 'test-' : '';
         $current_user_id = get_current_user_id();
         $is_guest = !isset($current_user_id) || empty($current_user_id) || $current_user_id === '0';
+
+        wp_register_script( 'dna-payment-api', 'https://' . $prefix . 'pay.dnapayments.com/checkout/payment-api.js' , array(), WC_DNA_VERSION, true );
+        wp_register_script( 'dna-hosted-fields', 'https://' . $prefix . 'cdn.dnapayments.com/js/hosted-fields/hosted-fields.js' , array(), WC_DNA_VERSION, true );
+        wp_register_script( 'dna-google-pay', 'https://' . $prefix . 'pay.dnapayments.com/components/google-pay/google-pay-component.js', array('dna-payment-api'), WC_DNA_VERSION, true );
+        wp_register_script( 'dna-apple-pay', 'https://' . $prefix . 'pay.dnapayments.com/components/apple-pay/apple-pay-component.js', array('dna-payment-api'), WC_DNA_VERSION, true );
         
         if ( ! is_cart() && ! is_checkout() && ! isset( $_GET['pay_for_order'] ) && ! is_add_payment_method_page()) {
             return;
@@ -411,8 +426,6 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         wp_register_style( 'dna_styles', plugins_url( 'assets/css/dna-payment.css', WC_DNA_MAIN_FILE ), [], WC_DNA_VERSION );
 		wp_enqueue_style( 'dna_styles' );
 
-        wp_enqueue_script( 'dna-payment-api', 'https://' . $prefix . 'pay.dnapayments.com/checkout/payment-api.js' , array('jquery'), WC_DNA_VERSION, true );
-        wp_enqueue_script( 'dna-hosted-fields', 'https://' . $prefix . 'cdn.dnapayments.com/js/hosted-fields/hosted-fields.js' , array('jquery'), WC_DNA_VERSION, true );
 
         if (is_add_payment_method_page()) {
             wp_register_script('woocommerce_dna_payment', plugins_url('assets/js/dna-add-payment-method.js', WC_DNA_MAIN_FILE), array('jquery', 'dna-payment-api', 'dna-hosted-fields') , WC_DNA_VERSION, true);
@@ -423,10 +436,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 'allowSavingCards' => $this->enabled_saved_cards && !$is_guest,
                 'cards' => $this->enabled_saved_cards ? WC_DNA_Payments_Order_Client_Helpers::getCardTokens( $current_user_id, $this->id ) : []
             );
-        } else {
-            wp_enqueue_script( 'dna-google-pay', 'https://' . $prefix . 'pay.dnapayments.com/components/google-pay/google-pay-component.js', array('dna-payment-api'), WC_DNA_VERSION, true );
-            wp_enqueue_script( 'dna-apple-pay', 'https://' . $prefix . 'pay.dnapayments.com/components/apple-pay/apple-pay-component.js', array('dna-payment-api'), WC_DNA_VERSION, true );
-            
+        } else {            
             wp_register_script('woocommerce_dna_payment', plugins_url('assets/js/dna-payment.js', WC_DNA_MAIN_FILE), array('jquery', 'dna-hosted-fields', 'dna-google-pay', 'dna-apple-pay', 'dna-payment-api') , WC_DNA_VERSION, true);
 
             $dna_params = array(
@@ -483,28 +493,21 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         return (bool) preg_match($pattern, $url);
     }
 
-    public function getBackLink($order) {
-        $backLink = $this->get_option( 'backLink' );
+    public function getBackLink($order, $is_failure = false) {
+        $backLink = $this->get_option( $is_failure ? 'failureBackLink' : 'backLink' );
         if (empty($backLink)) {
-            return $this->get_return_url( $order );
+            $return_url = $this->get_return_url( $order );
+            return $is_failure ? add_query_arg( 'status', 'failed', $return_url ) : $return_url;
+
         } elseif (!$this->isAbsolute($backLink)) {
             return get_site_url(null, $backLink);
         }
         return $backLink;
     }
 
-    public function getFailureBackLink() {
-        $failureBackLink = $this->get_option( 'failureBackLink' );
-        if (empty($failureBackLink)) {
-            return get_rest_url(null, 'dnapayments/failure-page');
-        } elseif (!$this->isAbsolute($failureBackLink)) {
-            return get_site_url(null, $failureBackLink);
-        }
-        return $failureBackLink;
-    }
-
     public function process_payment( $order_id ) {
-        global $woocommerce;
+        global $woocommerce;        
+
         $order = wc_get_order( $order_id );
 
         $auth = $this->get_auth_data(
@@ -538,7 +541,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             'paymentSettings' => [
                 'terminalId' => $this->terminal,
                 'returnUrl' => $this->getBackLink($order),
-                'failureReturnUrl' => $this->getFailureBackLink(),
+                'failureReturnUrl' => $this->getBackLink($order, true),
                 'callbackUrl' => get_rest_url(null, 'dnapayments/success'),
                 'failureCallbackUrl' => get_rest_url(null, 'dnapayments/failure')
             ],
@@ -562,8 +565,8 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         }
 
         return array(
-            'paymentData' => $paymentData,            
-            'auth' => $auth,
+            'paymentData' => json_encode($paymentData),   
+            'auth' => json_encode($auth),
             'result' => 'success'
         );
 
@@ -571,39 +574,127 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
     public function add_card_payment_data() {
 
+        $user_id    = get_current_user_id();
+        $meta       = get_user_meta($user_id);
         $invoice_id = date('d-m-y h:i:s');
-        $auth = $this->get_auth_data($invoice_id, 0, 'GBP');
+        $auth       = $this->get_auth_data($invoice_id, 0, 'GBP');
 
         function get_return_url($success) {
             $result = $success ? 'success' : 'failure';
             return get_site_url( null, add_query_arg( array('result' => $result), 'my-account/payment-methods' ) );
         }
 
+        function get_field($meta, $field) {
+            if ( isset( $meta [ $field ] ) ) {
+                return $meta [ $field ][0];
+            }
+            return '';
+        }
+
+        function get_address($meta, $prefix) {
+            return array(
+                'firstName'     => get_field( $meta, $prefix . '_first_name' ),
+                'lastName'      => get_field( $meta, $prefix . '_last_name' ),
+                'addressLine1'  => get_field( $meta, $prefix . '_address_1' ),
+                'addressLine2'  => get_field( $meta, $prefix . '_address_2' ),
+                'city'          => get_field( $meta, $prefix . '_city' ),
+                'postalCode'    => get_field( $meta, $prefix . '_postcode' ),
+                'phone'         => get_field( $meta, $prefix . '_phone' ),
+                'country'       => get_field( $meta, $prefix . '_country' ), 
+            );
+        }
+
         $paymentData = [
-            'transactionType' => 'VERIFICATION',
-            'invoiceId' => $invoice_id,
-            'description' => 'Add card to ' . get_bloginfo('name'),
-            'amount' => 0,
-            'currency' => 'GBP',
-            'language' => 'en-gb',
+            'transactionType'   => 'VERIFICATION',
+            'invoiceId'         => $invoice_id,
+            'description'       => 'Add card to ' . get_bloginfo('name'),
+            'amount'            => 0,
+            'currency'          => 'GBP',
+            'language'          => 'en-gb',
             'paymentSettings' => [
-                'terminalId' => $this->terminal,
-                'returnUrl' => get_return_url(true),
-                'failureReturnUrl' => get_return_url(false),
-                'callbackUrl' => get_rest_url(null, 'dnapayments/success-add-card')
+                'terminalId'        => $this->terminal,
+                'returnUrl'         => get_return_url(true),
+                'failureReturnUrl'  => get_return_url(false),
+                'callbackUrl'       => get_rest_url(null, 'dnapayments/success-add-card')
             ],
             'customerDetails' => [
+                'email'             => get_field( $meta, 'billing_email' ),
                 'accountDetails' => [
-                    'accountId' => strval(get_current_user_id())
+                    'accountId'     => strval($user_id)
+                ],
+                'billingAddress'    => get_address($meta, 'billing'),
+                'deliveryDetails' => [
+                    'deliveryAddress' => get_address($meta, 'shipping'),
                 ]
             ]
         ];
 
         echo json_encode(array(
-            'paymentData' => $paymentData,            
-            'auth' => $auth,
-            'result' => is_null($auth['access_token']) ? 'failure' : 'success'
+            'paymentData'   => $paymentData,            
+            'auth'          => $auth,
+            'result'        => is_null($auth['access_token']) ? 'failure' : 'success'
         ));
+
+        wp_die();
+    }
+
+    public function get_payment_and_auth_data() {
+        global $woocommerce;
+
+        $order_id   = $_POST['order_id'];
+        $total      = $_POST['total'];
+
+        $order      = wc_get_order( $order_id );
+
+        $auth = $this->get_auth_data(
+            strval( $order->get_order_number() ),
+            floatval( $total ),
+            $order->get_currency()
+        );
+
+        if ($auth['access_token'] == null) {
+            wp_send_json( array(
+                'result' => 'failure',
+                'messages' => [
+                    __('Invalid auth data', 'woocommerce-gateway-dna')
+                 ]
+            ) );
+
+            wp_die();
+        }
+
+        $isForcePayment = !WC_DNA_Payments_Order_Client_Helpers::isPaypalLineItemsValid($order);
+        $orderLines = WC_DNA_Payments_Order_Client_Helpers::getOrderLines($order, $isForcePayment);
+        $transactionType = $this->get_option('transactionType');
+
+        $paymentData = [
+            'invoiceId' => strval($order->get_order_number()),
+            'description' => $this->get_option('gatewayOrderDescription'),
+            'currency' => $order->get_currency(),
+            'language' => 'en-gb',
+            'paymentSettings' => [
+                'terminalId' => $this->terminal,
+                'returnUrl' => $this->getBackLink($order),
+                'failureReturnUrl' => $this->getBackLink($order, true),
+                'callbackUrl' => get_rest_url(null, 'dnapayments/success'),
+                'failureCallbackUrl' => get_rest_url(null, 'dnapayments/failure')
+            ],
+            'amountBreakdown' => WC_DNA_Payments_Order_Client_Helpers::getAmountBreakdown($order),
+            'orderLines' => $orderLines,
+            'merchantCustomData' => json_encode(array(
+                'orderId' => $order_id
+            ))
+        ];
+
+        if ( isset($transactionType) && !empty($transactionType) && $transactionType != 'default' ) {
+            $paymentData['transactionType'] = $transactionType;
+        }
+
+        wp_send_json( array(
+            'result'        => 'success',
+            'paymentData'   => $paymentData,
+            'auth'          => $auth
+        ) );
 
         wp_die();
     }

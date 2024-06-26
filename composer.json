@@ -1,17 +1,18 @@
 {
-    "version": "2.4.0",
+    "version": "3.0.0",
     "name": "dna/woocommerce",
     "description": "DNA payments gateway for Woocommerce",
     "type": "wordpress-plugin",
-    "require": {
-        "composer/installers": "^1.9",
-        "dna/dnapayments-sdk-php": "^2.0"
-    },
     "license": "MIT",
     "authors": [
         {
-            "name": "Alikhan Izbergenov",
-            "email": "alikhan@dnapayments.com"
+            "name": "DNA Payments",
+            "email": "nurbol@dnapayments.com"
         }
-    ]
+    ],
+    "config": {},
+    "require": {
+        "composer/installers": "^1.9",
+        "dna/dnapayments-sdk-php": "^2.0"
+    }
 }

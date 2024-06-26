@@ -258,7 +258,7 @@ class WC_DNA_Payments_Order_Client_Helpers {
 
         $tokens = WC_Payment_Tokens::get_customer_tokens( $user_id, $gateway_id );
 
-        return array_map(function ($token) {
+        return array_values( array_map( function ($token) {
             $extra_data = $token->get_meta( 'extra_data' );
 
             return [
@@ -270,6 +270,6 @@ class WC_DNA_Payments_Order_Client_Helpers {
                 'panStar' => $extra_data['panStar'],
                 'expiryDate' => $extra_data['expiryDate']
             ];
-        }, $tokens);
+        }, $tokens ) );
     }
 }

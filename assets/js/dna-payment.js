@@ -110,6 +110,12 @@ jQuery( function( $ ) {
                     dataType: 'json',
                     success: function(result) {
                         if(result.result == 'success') {
+                            try {
+                                result.paymentData = JSON.parse(result.paymentData);
+                                result.auth = JSON.parse(result.auth);
+                            } catch ( err) {
+                                console.error(err)
+                            }
                             resolve(result);
                             return;
                         } else {
@@ -229,7 +235,7 @@ jQuery( function( $ ) {
                             }
                         }
                     },
-                    onBeforeProccessPayment: fetchPaymentData,
+                    onBeforeProcessPayment: fetchPaymentData,
                     onPaymentSuccess: (result) => {
                         formLoader.hide();
                         if (this.returnUrl) {
