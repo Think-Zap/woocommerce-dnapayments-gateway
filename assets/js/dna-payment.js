@@ -14,7 +14,7 @@ jQuery( function( $ ) {
     const tempToken = wc_dna_params.temp_token;
     const currencyCode = wc_dna_params.current_currency_code;
     const terminalId = wc_dna_params.terminal_id;
-    const availableGateways = Object.keys(wc_dna_params.available_gateways || {})
+    const availableGateways = wc_dna_params.available_gateways || [];
     const cards = Object.values(wc_dna_params.cards || {});
 
     let hostedFieldsInstance, hostedFieldsInstanceId;

@@ -445,7 +445,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 'temp_token' => $this->temp_token(),
                 'terminal_id' => $this->terminal,
                 'current_currency_code' => get_woocommerce_currency(),
-                'available_gateways' => WC()->payment_gateways->get_available_payment_gateways(),
+                'available_gateways' => array_keys(WC()->payment_gateways->get_available_payment_gateways()),
                 'allowSavingCards' => $this->enabled_saved_cards && !$is_guest,
                 'total' => $total,
                 'cards' => $this->enabled_saved_cards ? WC_DNA_Payments_Order_Client_Helpers::getCardTokens( $current_user_id, $this->id ) : []
