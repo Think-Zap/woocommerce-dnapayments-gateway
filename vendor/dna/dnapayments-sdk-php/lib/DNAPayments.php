@@ -12,10 +12,6 @@ class DNAPayments {
         self::configure($config);
     }
 
-    private static $config = [
-        'isTestMode' => false,
-        'scopes' => []
-    ];
     private static $fields = [
         'authUrl' => 'https://oauth.dnapayments.com/oauth2/token',
         'testAuthUrl' => 'https://test-oauth.dnapayments.com/oauth2/token',
@@ -25,14 +21,25 @@ class DNAPayments {
         'apiUrl' => 'https://api.dnapayments.com'
     ];
 
+    private static $config = [
+        'isTestMode' => false,
+        'scopes' => [],
+        'isEnableDonation' => null, // boolean
+        'autoRedirectDelayInMs' => null, // int
+        'paymentTimeoutInSeconds' => null, // int
+        'allowSavingCards' => null, // boolean
+        'cards' => null, // array of objects
+        'disabledCardSchemes' => null, // array of objects,
+        'locale' => null // object
+    ];
 
     public static function configure($config) {
         if(empty($config)) return;
-        if(array_key_exists('isTestMode', $config)) {
-            self::$config['isTestMode'] = $config['isTestMode'];
-        }
-        if(array_key_exists('scopes', $config)) {
-            self::$config['scopes'] = $config['scopes'];
+
+        foreach ($config as $key => $value) {
+            if (array_key_exists($key, self::$config)) {
+                self::$config[$key] = $value;
+            }
         }
     }
 
@@ -71,12 +78,17 @@ class DNAPayments {
                 'grant_type' => 'client_credentials',
                 'scope' => 'webapi',
                 'client_id' => $data['client_id'],
-                'client_secret' => $data['client_secret'],
-                'terminal' => $data['terminal'],
-                'invoiceId' => strval($data['invoiceId']),
-                'amount' => floatval($data['amount']),
-                'currency' => strval($data['currency'])
+                'client_secret' => $data['client_secret']
             ];
+
+            $optional_fields = [ 'terminal', 'invoiceId', 'amount', 'currency' ];
+
+            foreach ($optional_fields as $key) {
+                if ( array_key_exists( $key, $data ) ) {
+                    $func = $key == 'amount' ? 'floatval' : 'strval';
+                    $authData[ $key ] = call_user_func( $func, $data[ $key] );
+                }
+            }
 
             $response = HTTPRequester::HTTPPost(self::getPath()->authUrl, [], $authData);
             if ($response != null && $response['status'] >= 200 && $response['status'] < 400) {
@@ -154,6 +166,40 @@ class DNAPayments {
         return self::chargeRequest($auth['access_token'], $data['transaction_id'], $data['amount']);
     }
 
+    public function get_client_token($client_id, $client_secret) {
+        return self::authApi([
+            'client_id' => $client_id,
+            'client_secret' => $client_secret
+        ]);
+    }
+
+    public function get_transactions_by_field($client_token, $field_value, $field_name = null) {
+        try {
+            $url = self::getPath()->apiUrl . '/v2/transactions/' . $field_value . '/list';
+
+            if ($field_name) {
+                $url .= '?field=' . $field_name;
+            }
+
+            $response = HTTPRequester::HTTPGet($url, $this->getJSONHeader($client_token));
+
+            if ($response != null && $response['status'] >= 200 && $response['status'] < 400) {
+                return $response['response'];
+            }
+            throw new RequestException($response, 'errorCode');
+        } catch (Exception $e) {
+            throw $e;
+        }
+    }
+
+    public function get_transactions_by_id($client_token, $transaction_id) {
+        return self::get_transactions_by_field($client_token, $transaction_id);
+    }
+
+    public function get_transactions_by_invoice_id($client_token, $invoice_id) {
+        return self::get_transactions_by_field($client_token, $invoice_id, 'invoiceId');
+    }
+
     public static function auth($data) {
         try {
             $authData = [
@@ -188,15 +234,23 @@ class DNAPayments {
         );
     }
 
-    public static function generateUrl($order, $authToken)
+    public static function generateUrl($payment_data, $auth_token)
     {
-
         $payload = array(
-            'auth' => $authToken
+            'auth' => $auth_token
         );
-        return self::getPath()->paymentUrl . '/checkout/?params='. self::encodeToUrl((object) array_merge($payload, $order)) . '&data=' . self::encodeToUrl((object) [
-                'isTest' => self::$config['isTestMode']
-            ]);
+
+        $params_str = self::encodeToUrl((object) array_merge($payload, $payment_data));
+
+        $filled_configs = [];
+
+        foreach (self::$config as $key => $value) {
+            if (!is_null($value)) {
+                $filled_configs[$key] = $value;
+            }
+        }
+
+        return self::getPath()->paymentUrl . '/checkout/?params=' . $params_str . '&data=' . self::encodeToUrl((object) $filled_configs);
     }
 
     public static function isValidSignature($result, $secret)

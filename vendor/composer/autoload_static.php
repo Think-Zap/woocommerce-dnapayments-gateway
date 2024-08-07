@@ -28,17 +28,13 @@ class ComposerStaticInitdc1ae1d6b42196f55c59c007e433da7c
         array (
             'DNAPayments\\' => 12,
         ),
-        'C' => 
-        array (
-            'Composer\\Installers\\' => 20,
-        ),
     );
 
     public static $prefixDirsPsr4 = array (
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-message/src',
-            1 => __DIR__ . '/..' . '/psr/http-factory/src',
+            0 => __DIR__ . '/..' . '/psr/http-factory/src',
+            1 => __DIR__ . '/..' . '/psr/http-message/src',
         ),
         'Psr\\Http\\Client\\' => 
         array (
@@ -60,10 +56,10 @@ class ComposerStaticInitdc1ae1d6b42196f55c59c007e433da7c
         array (
             0 => __DIR__ . '/..' . '/dna/dnapayments-sdk-php/lib',
         ),
-        'Composer\\Installers\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/composer/installers/src/Composer/Installers',
-        ),
+    );
+
+    public static $classMap = array (
+        'Composer\\InstalledVersions' => __DIR__ . '/..' . '/composer/InstalledVersions.php',
     );
 
     public static function getInitializer(ClassLoader $loader)
@@ -71,6 +67,7 @@ class ComposerStaticInitdc1ae1d6b42196f55c59c007e433da7c
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitdc1ae1d6b42196f55c59c007e433da7c::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitdc1ae1d6b42196f55c59c007e433da7c::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInitdc1ae1d6b42196f55c59c007e433da7c::$classMap;
 
         }, null, ClassLoader::class);
     }
