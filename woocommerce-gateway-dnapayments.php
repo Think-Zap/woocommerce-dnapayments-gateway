@@ -61,6 +61,8 @@ class WC_DNA_Payments {
 	 */
 	public static function init() {
 
+		add_action( 'before_woocommerce_init', array( __CLASS__, 'before_woocommerce_hpos' ) );
+
 		// This hook is used to execute code after all active plugins have fully loaded, 
 		// ensuring that WooCommerce is loaded before executing WooCommerce-specific code.
 		add_action( 'plugins_loaded', array( __CLASS__, 'includes' ), 0 );
@@ -82,6 +84,12 @@ class WC_DNA_Payments {
 
 		// Load translations
 		load_plugin_textdomain( self::$text_domain, false, self::plugin_abspath() . '/languages' );
+	}
+
+	public static function before_woocommerce_hpos() {
+		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) { 
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true ); 
+		}
 	}
 
 	public static function custom_woocommerce_endpoint_order_received_title( $title, $endpoint, $action ) {
@@ -156,7 +164,6 @@ class WC_DNA_Payments {
 
 	/**
 	 * Registers WooCommerce Blocks integration.
-	 *
 	 */
 	public static function woocommerce_gateway_block_support() {
 		if ( class_exists( 'Automattic\WooCommerce\Blocks\Payments\Integrations\AbstractPaymentMethodType' ) ) {
