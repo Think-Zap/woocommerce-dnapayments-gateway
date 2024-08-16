@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'dna/woocommerce',
-        'pretty_version' => '3.0.2',
-        'version' => '3.0.2.0',
+        'pretty_version' => '3.0.3',
+        'version' => '3.0.3.0',
         'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -11,17 +11,17 @@
     ),
     'versions' => array(
         'dna/dnapayments-sdk-php' => array(
-            'pretty_version' => '2.1.1',
-            'version' => '2.1.1.0',
-            'reference' => '9cf5c2d5fad42abda4b4416bc278019ceb52e1f4',
+            'pretty_version' => '2.1.2',
+            'version' => '2.1.2.0',
+            'reference' => '21c595d5abd05289cc87482d40363a55aadb920a',
             'type' => 'library',
             'install_path' => __DIR__ . '/../dna/dnapayments-sdk-php',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
         'dna/woocommerce' => array(
-            'pretty_version' => '3.0.2',
-            'version' => '3.0.2.0',
+            'pretty_version' => '3.0.3',
+            'version' => '3.0.3.0',
             'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',

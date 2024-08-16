@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2eb06f52f43c7c9a6e68043a886fcd7b",
+    "content-hash": "a3c06b89db9163f8c97e1dbf0968b58f",
     "packages": [
         {
             "name": "dna/dnapayments-sdk-php",
-            "version": "2.1.1",
+            "version": "2.1.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/DNA-Payments/dnapayments-sdk-php.git",
-                "reference": "9cf5c2d5fad42abda4b4416bc278019ceb52e1f4"
+                "reference": "21c595d5abd05289cc87482d40363a55aadb920a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/DNA-Payments/dnapayments-sdk-php/zipball/9cf5c2d5fad42abda4b4416bc278019ceb52e1f4",
-                "reference": "9cf5c2d5fad42abda4b4416bc278019ceb52e1f4",
+                "url": "https://api.github.com/repos/DNA-Payments/dnapayments-sdk-php/zipball/21c595d5abd05289cc87482d40363a55aadb920a",
+                "reference": "21c595d5abd05289cc87482d40363a55aadb920a",
                 "shasum": ""
             },
             "require": {
@@ -45,9 +45,9 @@
             "description": "DNA payments library for php",
             "support": {
                 "issues": "https://github.com/DNA-Payments/dnapayments-sdk-php/issues",
-                "source": "https://github.com/DNA-Payments/dnapayments-sdk-php/tree/2.1.1"
+                "source": "https://github.com/DNA-Payments/dnapayments-sdk-php/tree/2.1.2"
             },
-            "time": "2024-08-01T17:55:03+00:00"
+            "time": "2024-08-16T08:19:24+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",

@@ -209,7 +209,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
     private function savePayPalOrderDetail(WC_Order $order, $input, $isAddOrderNode) {
         $status = $input['paypalOrderStatus'];
-        $сapture_status = $input['paypalCaptureStatus'];
+        $capture_status = $input['paypalCaptureStatus'];
         $reason = isset($input['paypalCaptureStatusReason']) ? $input['paypalCaptureStatusReason'] : null;
 
         if ($isAddOrderNode) {
@@ -241,7 +241,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         }
 
         $order->update_meta_data( 'paypal_status',  $status);
-        $order->update_meta_data( 'paypal_capture_status',  $сapture_status);
+        $order->update_meta_data( 'paypal_capture_status',  $capture_status);
 
         if ($reason) {
             $order->update_meta_data( 'paypal_capture_status_reason',  $input['paypalCaptureStatusReason']);

@@ -11,7 +11,6 @@ class WC_DNA_Payments_Order_Handler extends WC_DNA_Payments_Gateway {
     public function __construct() {
         add_action( 'woocommerce_order_status_changed', array( $this, 'capture_payment' ), 10, 3 );
         add_action( 'woocommerce_order_status_cancelled', array( $this, 'cancel_payment' ) );
-        add_action( 'woocommerce_order_status_refunded', array( $this, 'cancel_payment' ) );
         parent::__construct();
     }
 
@@ -43,10 +42,10 @@ class WC_DNA_Payments_Order_Handler extends WC_DNA_Payments_Gateway {
                 return;
             }
 
-            $charge = $order->get_transaction_id();
+            $transaction_id = $order->get_transaction_id();
             $is_finished = $order->get_meta( 'is_finished_payment', true );
 
-            if ( $charge && 'no' === $is_finished ) {
+            if ( $transaction_id && 'no' === $is_finished ) {
                 $order_total = $order->get_total();
 
                 if ( 0 < $order->get_total_refunded() ) {
@@ -61,8 +60,9 @@ class WC_DNA_Payments_Order_Handler extends WC_DNA_Payments_Gateway {
                         'invoiceId' => strval($order->get_order_number()),
                         'amount' => $order_total,
                         'currency' => $order->get_currency(),
-                        'transaction_id' => $order->get_transaction_id()
+                        'transaction_id' => $transaction_id
                     ]);
+
                     if( !empty($result) && $result['success'] ) {
                         $order->add_order_note( sprintf(__( 'DNA Payments transaction complete (Transaction ID: %s)', 'woocommerce-gateway-dna' ), $result['id']) );
                         $order->update_meta_data( 'is_finished_payment', 'yes' );
