@@ -154,7 +154,7 @@ jQuery( function( $ ) {
 
         switch (wc_dna_params.integration_type) {
             case 'hosted-fields':
-                const { returnUrl } = paymentData.paymentSettings
+                const { returnUrl, failureReturnUrl } = paymentData.paymentSettings
                 hostedFieldsInstance.submit({
                     paymentData,
                     token: auth.access_token
@@ -166,6 +166,10 @@ jQuery( function( $ ) {
                         cardError.show('Your card has not been authorised, please check the details and retry or contact your bank.');
                     } else {
                         cardError.show(err.message)
+                    }
+                    
+                    if (String(err.code).includes('CLOSE_TRANSACTION')) {
+                        window.location.href = failureReturnUrl
                     }
                 }).finally(() => {
                     formLoader.hide();
@@ -306,6 +310,7 @@ jQuery( function( $ ) {
                 container: threeDSecureModal.body
             },
             fontNames: ['Open Sans'],
+            sendCallbackEveryFailedAttempt: Number(wc_dna_params.send_callback_every_failed_attempt),
             fields: {
                 cardholderName: {
                     container: $card_form.find('#dna-card-name')[0],

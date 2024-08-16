@@ -42,7 +42,7 @@ export const DnapaymentsCreditCardFields = ({
     })
 
     const setupIntegration = async () => {
-        const { isTestMode, tempToken, cards } = getDnaPaymentsSettingsData()
+        const { isTestMode, tempToken, cards, sendCallbackEveryFailedAttempt } = getDnaPaymentsSettingsData()
         const selectedCard = cards.find((c) => String(c.id) === String(token))
 
         setPlaceOrderButtonDisabled(true)
@@ -59,6 +59,7 @@ export const DnapaymentsCreditCardFields = ({
                 cvv: document.getElementById(HOSTED_FIELD_IDS.cvv),
                 cvvToken: document.getElementById(HOSTED_FIELD_IDS.cvvToken),
             },
+            sendCallbackEveryFailedAttempt
         })
 
         if (selectedCard) {

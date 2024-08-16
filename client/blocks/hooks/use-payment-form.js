@@ -26,7 +26,7 @@ export const usePaymentForm = ({ props, hostedFieldsInstance }) => {
                 const paymentData = tryParse(paymentDetails.paymentData)
                 const auth = tryParse(paymentDetails.auth)
                 const merchantCustomData = tryParse(paymentData.merchantCustomData) || {}
-                const { returnUrl } = paymentData.paymentSettings
+                const { returnUrl, failureReturnUrl } = paymentData.paymentSettings
 
                 switch (integrationType) {
                     case 'hosted-fields': {
@@ -68,6 +68,10 @@ export const usePaymentForm = ({ props, hostedFieldsInstance }) => {
                                     message,
                                     messageContext: emitResponse.noticeContexts.PAYMENTS,
                                 })
+
+                                if (String(err.code).includes('CLOSE_TRANSACTION')) {
+                                    window.location.href = failureReturnUrl
+                                }
                             })
                         break
                     }

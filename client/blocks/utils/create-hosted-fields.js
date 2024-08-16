@@ -5,6 +5,7 @@ export async function createHostedFields({
     accessToken,
     threeDSModal,
     domElements: { number, name, expDate, cvv, cvvToken },
+    sendCallbackEveryFailedAttempt = 0
 }) {
     const fields = {
         cardholderName: {
@@ -55,6 +56,7 @@ export async function createHostedFields({
             container: threeDSModal.body,
         },
         fields,
+        sendCallbackEveryFailedAttempt,
     }
 
     try {

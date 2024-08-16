@@ -77,6 +77,11 @@ function get_dnapayments_admin_fields() {
          'description' => 'Mark this checkbox to automatically set order status to "Completed" upon successful payment. Valid only for "Sale" transactions.',
          'default'     => 'no'
       ),
+      'failed_attempts_limit' => array(
+         'title'       => __( 'Failed payment attempts limit (Hosted Fields only)', 'woocommerce-gateway-dna' ),
+         'type'        => 'number',
+         'description' => 'Specify the number of unsuccessful payment attempts allowed before the system automatically clears the shopping basket and marks the order as failed.',
+      ),
       'is_test_mode' => array(
          'title'       => __( 'Test mode', 'woocommerce-gateway-dna' ),
          'label'       => 'Enable Test Mode',

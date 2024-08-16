@@ -394,6 +394,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             'current_currency_code' => get_woocommerce_currency(),
             'available_gateways' => WC()->payment_gateways->get_available_payment_gateways(),
             'allow_saving_cards' => $this->enabled_saved_cards && !$is_guest,
+            'send_callback_every_failed_attempt' => $this->get_option( 'failed_attempts_limit' ),
             'cards' => WC_DNA_Payments_Order_Client_Helpers::getCardTokens( $current_user_id, $this->id )
         );
     }
@@ -447,6 +448,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 'current_currency_code' => get_woocommerce_currency(),
                 'available_gateways' => array_keys(WC()->payment_gateways->get_available_payment_gateways()),
                 'allowSavingCards' => $this->enabled_saved_cards && !$is_guest,
+                'send_callback_every_failed_attempt' => $this->get_option( 'failed_attempts_limit' ),
                 'total' => $total,
                 'cards' => $this->enabled_saved_cards ? WC_DNA_Payments_Order_Client_Helpers::getCardTokens( $current_user_id, $this->id ) : []
             );
