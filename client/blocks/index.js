@@ -16,6 +16,7 @@ import { DnapaymentsCreditCardFields } from './components/credit-card-fields'
 import { usePaymentForm } from './hooks/use-payment-form'
 
 const settings = getPaymentMethodData(GATEWAY_ID, {})
+const allowSavingCards = settings.allow_saving_cards
 const isHostedFields = settings.integration_type === 'hosted-fields'
 
 const defaultLabel = __('DNA Payments', TEXT_DOMAIN)
@@ -75,8 +76,8 @@ const dnapaymentsPaymentMethod = {
     savedTokenComponent: <Content />,
     ariaLabel: label,
     supports: {
-        showSavedCards: isHostedFields,
-        showSaveOption: isHostedFields,
+        showSavedCards: allowSavingCards && isHostedFields,
+        showSaveOption: allowSavingCards && isHostedFields,
         features: settings?.supports ?? [],
     },
     placeOrderButtonLabel: __('Pay with DNA Payments', TEXT_DOMAIN),

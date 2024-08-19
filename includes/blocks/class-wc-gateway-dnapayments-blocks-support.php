@@ -52,7 +52,7 @@ final class WC_Gateway_DNA_Payments_Blocks_Support extends WC_Gateway_Base_DNA_P
 		$gateways	= WC()->payment_gateways->payment_gateways();
 		$gateway  	= $gateways[ $name ];
 
-		if ( isset( $saved_methods[ 'cc' ] ) && isset ( $gateway ) && $gateway->integration_type !== 'hosted-fields' ) {
+		if ( isset( $saved_methods[ 'cc' ] ) && isset ( $gateway ) && ! $gateway->enabled_saved_cards) {
 			$saved_cards 		= $saved_methods[ 'cc' ];
 			$new_saved_cards 	= [];
 

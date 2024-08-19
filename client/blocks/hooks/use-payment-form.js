@@ -18,7 +18,8 @@ export const usePaymentForm = ({ props, hostedFieldsInstance }) => {
         eventRegistration: { onCheckoutSuccess },
         shouldSavePayment,
     } = props
-    const { isTestMode, integrationType, allowSavingCards, cards } = getDnaPaymentsSettingsData()
+    const { isTestMode, integrationType, allowSavingCards, cards: _cards } = getDnaPaymentsSettingsData()
+    const cards = allowSavingCards ? _cards : []
 
     useEffect(() => {
         const handler = ({ processingResponse: { paymentDetails } }) =>
