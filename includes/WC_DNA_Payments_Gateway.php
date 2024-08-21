@@ -163,7 +163,12 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         }
 
         if( $order->get_meta('is_finished_payment', true) === 'no' ) {
-            return $this->process_cancel($order);
+            if ($order->get_total() == $amount) {
+                return $this->process_cancel($order);
+            }
+
+            $message = __( 'Partial cancellation of this transaction is not allowed.', 'woocommerce-gateway-dna' );
+			throw new Exception( $message );
         }
 
         try {
