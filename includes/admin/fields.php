@@ -80,7 +80,7 @@ function get_dnapayments_admin_fields() {
       'failed_attempts_limit' => array(
          'title'       => __( 'Failed payment attempts limit (Hosted Fields only)', 'woocommerce-gateway-dna' ),
          'type'        => 'number',
-         'description' => 'Specify the number of unsuccessful payment attempts allowed before the system automatically clears the shopping basket and marks the order as failed.',
+         'description' => 'Specify the number of unsuccessful payment attempts allowed before the system automatically clears the shopping basket and marks the order as failed. A value of "0" or an empty field indicates no limit.',
       ),
       'is_test_mode' => array(
          'title'       => __( 'Test mode', 'woocommerce-gateway-dna' ),
