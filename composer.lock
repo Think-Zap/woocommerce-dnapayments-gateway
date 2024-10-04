@@ -4,27 +4,28 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a3c06b89db9163f8c97e1dbf0968b58f",
+    "content-hash": "c4af0d3b0fd35d69b9dfc110de1bd035",
     "packages": [
         {
             "name": "dna/dnapayments-sdk-php",
-            "version": "2.1.2",
+            "version": "2.2.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/DNA-Payments/dnapayments-sdk-php.git",
-                "reference": "21c595d5abd05289cc87482d40363a55aadb920a"
+                "reference": "c56d0726054623f14a568ff8410751e83b2668e5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/DNA-Payments/dnapayments-sdk-php/zipball/21c595d5abd05289cc87482d40363a55aadb920a",
-                "reference": "21c595d5abd05289cc87482d40363a55aadb920a",
+                "url": "https://api.github.com/repos/DNA-Payments/dnapayments-sdk-php/zipball/c56d0726054623f14a568ff8410751e83b2668e5",
+                "reference": "c56d0726054623f14a568ff8410751e83b2668e5",
                 "shasum": ""
             },
             "require": {
-                "guzzlehttp/guzzle": "^7.8"
+                "guzzlehttp/guzzle": "^7.9",
+                "symfony/deprecation-contracts": "2.5.3"
             },
             "require-dev": {
-                "phpunit/phpunit": "^11.1"
+                "phpunit/phpunit": "9.6"
             },
             "type": "library",
             "autoload": {
@@ -45,9 +46,9 @@
             "description": "DNA payments library for php",
             "support": {
                 "issues": "https://github.com/DNA-Payments/dnapayments-sdk-php/issues",
-                "source": "https://github.com/DNA-Payments/dnapayments-sdk-php/tree/2.1.2"
+                "source": "https://github.com/DNA-Payments/dnapayments-sdk-php/tree/2.2.0"
             },
-            "time": "2024-08-16T08:19:24+00:00"
+            "time": "2024-10-04T08:53:14+00:00"
         },
         {
             "name": "guzzlehttp/guzzle",
@@ -580,25 +581,25 @@
         },
         {
             "name": "symfony/deprecation-contracts",
-            "version": "v3.5.0",
+            "version": "v2.5.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/deprecation-contracts.git",
-                "reference": "0e0d29ce1f20deffb4ab1b016a7257c4f1e789a1"
+                "reference": "80d075412b557d41002320b96a096ca65aa2c98d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/deprecation-contracts/zipball/0e0d29ce1f20deffb4ab1b016a7257c4f1e789a1",
-                "reference": "0e0d29ce1f20deffb4ab1b016a7257c4f1e789a1",
+                "url": "https://api.github.com/repos/symfony/deprecation-contracts/zipball/80d075412b557d41002320b96a096ca65aa2c98d",
+                "reference": "80d075412b557d41002320b96a096ca65aa2c98d",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.1"
+                "php": ">=7.1"
             },
             "type": "library",
             "extra": {
                 "branch-alias": {
-                    "dev-main": "3.5-dev"
+                    "dev-main": "2.5-dev"
                 },
                 "thanks": {
                     "name": "symfony/contracts",
@@ -627,7 +628,7 @@
             "description": "A generic function and convention to trigger deprecation notices",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/deprecation-contracts/tree/v3.5.0"
+                "source": "https://github.com/symfony/deprecation-contracts/tree/v2.5.3"
             },
             "funding": [
                 {
@@ -643,7 +644,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2024-04-18T09:32:20+00:00"
+            "time": "2023-01-24T14:02:46+00:00"
         }
     ],
     "packages-dev": [],

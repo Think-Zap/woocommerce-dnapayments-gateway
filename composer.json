@@ -1,5 +1,5 @@
 {
-    "version": "3.0.3",
+    "version": "3.0.4",
     "name": "dna/woocommerce",
     "description": "DNA payments gateway for Woocommerce",
     "type": "wordpress-plugin",
@@ -12,6 +12,6 @@
     ],
     "config": {},
     "require": {
-        "dna/dnapayments-sdk-php": "^2.1"
+        "dna/dnapayments-sdk-php": "^2.2"
     }
 }

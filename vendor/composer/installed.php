@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'dna/woocommerce',
-        'pretty_version' => '3.0.3',
-        'version' => '3.0.3.0',
+        'pretty_version' => '3.0.4',
+        'version' => '3.0.4.0',
         'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -11,17 +11,17 @@
     ),
     'versions' => array(
         'dna/dnapayments-sdk-php' => array(
-            'pretty_version' => '2.1.2',
-            'version' => '2.1.2.0',
-            'reference' => '21c595d5abd05289cc87482d40363a55aadb920a',
+            'pretty_version' => '2.2.0',
+            'version' => '2.2.0.0',
+            'reference' => 'c56d0726054623f14a568ff8410751e83b2668e5',
             'type' => 'library',
             'install_path' => __DIR__ . '/../dna/dnapayments-sdk-php',
             'aliases' => array(),
             'dev_requirement' => false,
         ),
         'dna/woocommerce' => array(
-            'pretty_version' => '3.0.3',
-            'version' => '3.0.3.0',
+            'pretty_version' => '3.0.4',
+            'version' => '3.0.4.0',
             'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
@@ -110,9 +110,9 @@
             'dev_requirement' => false,
         ),
         'symfony/deprecation-contracts' => array(
-            'pretty_version' => 'v3.5.0',
-            'version' => '3.5.0.0',
-            'reference' => '0e0d29ce1f20deffb4ab1b016a7257c4f1e789a1',
+            'pretty_version' => 'v2.5.3',
+            'version' => '2.5.3.0',
+            'reference' => '80d075412b557d41002320b96a096ca65aa2c98d',
             'type' => 'library',
             'install_path' => __DIR__ . '/../symfony/deprecation-contracts',
             'aliases' => array(),
