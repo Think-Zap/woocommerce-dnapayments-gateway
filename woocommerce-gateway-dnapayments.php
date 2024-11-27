@@ -3,7 +3,7 @@
  * Plugin Name: WooCommerce DNA Payments Gateway
  * Plugin URI: https://www.dnapayments.com
  * Description: Take credit card payments on your store.
- * Version: 3.0.4
+ * Version: 3.0.5
  *
  * Author: DNA Payments Integration
  * Author URI: https://www.dnapayments.com
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'WC_DNA_PLUGIN_PATH', untrailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'WC_DNA_MAIN_FILE', __FILE__ );
 define( 'WC_DNA_ID', 'dnapayments' );
-define( 'WC_DNA_VERSION', '3.0.4' );
+define( 'WC_DNA_VERSION', '3.0.5' );
 define( 'WC_DNA_MIN_PHP_VER', '5.6.0' );
 define( 'WC_DNA_MIN_WC_VER', '3.0' );
 
@@ -42,7 +42,7 @@ class WC_DNA_Payments {
 	public static $id = 'dnapayments';
 
 	// Plugin version
-	public static $version = '3.0.4';
+	public static $version = '3.0.5';
 
 	// Wordpress supported min version
 	public static $wp_min_version = '';
@@ -63,6 +63,12 @@ class WC_DNA_Payments {
 
 		add_action( 'before_woocommerce_init', array( __CLASS__, 'before_woocommerce_hpos' ) );
 
+		// The init action ensures that all WordPress core functions and hooks are fully loaded, making it safe to load translations.
+		add_action( 'init', function() {
+			// Load translations
+			load_plugin_textdomain( self::$text_domain, false, self::plugin_abspath() . '/languages' );
+		} );		
+
 		// This hook is used to execute code after all active plugins have fully loaded, 
 		// ensuring that WooCommerce is loaded before executing WooCommerce-specific code.
 		add_action( 'plugins_loaded', array( __CLASS__, 'includes' ), 0 );
@@ -80,10 +86,7 @@ class WC_DNA_Payments {
 		add_filter( 'woocommerce_endpoint_order-received_title', array( __CLASS__, 'custom_woocommerce_endpoint_order_received_title' ), 10, 3 );
 
 		// Change "Thank you" ("Order received") page text when order status failed		
-		add_filter('woocommerce_thankyou_order_received_text', array( __CLASS__, 'custom_order_received_text' ), 10, 3);
-
-		// Load translations
-		load_plugin_textdomain( self::$text_domain, false, self::plugin_abspath() . '/languages' );
+		add_filter('woocommerce_thankyou_order_received_text', array( __CLASS__, 'custom_order_received_text' ), 10, 3);		
 	}
 
 	public static function before_woocommerce_hpos() {
@@ -184,8 +187,8 @@ class WC_DNA_Payments {
 	}
 
 	public static function add_custom_elements() {
-		echo '<div id="dnapayments_apple_pay_container" style="display: none"></div>' .
-            '<div id="dnapayments_google_pay_container" style="display: none"></div>' .
+		echo '<div id="dnapayments_apple_pay_container"></div>' .
+            '<div id="dnapayments_google_pay_container"></div>' .
             '<div class="dnapayments-footer" style="display: none"><p>Powered by </p><img src="' . plugins_url('assets/img/dnapayments-logo.svg', WC_DNA_MAIN_FILE) .'" /></div>';
 	}
 }

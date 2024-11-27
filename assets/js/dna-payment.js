@@ -24,15 +24,14 @@ jQuery( function( $ ) {
     const cardError = createCardError();
     const googlePay = createPaymentComponent({
         paymentMethodId: 'dnapayments_google_pay',
-        paymentMethodObject: window.DNAPayments.GooglePayComponent
+        paymentMethodObject: window.DNAPayments.GooglePayComponent,
+        errorMessage: 'Google Pay payments are not supported in your current browser.'
     });
     const applePay = createPaymentComponent({
         paymentMethodId: 'dnapayments_apple_pay',
-        paymentMethodObject: window.DNAPayments.ApplePayComponent
+        paymentMethodObject: window.DNAPayments.ApplePayComponent,
+        errorMessage: 'Apple Pay payments are not supported in your current browser. Please use Safari on a compatible Apple device to complete your transaction.'
     });
-
-    googlePay && googlePay.$listItem.hide();
-    applePay && applePay.$listItem.hide();
 
     $checkout_form.on('change', 'input[name="payment_method"]', function() {
         selectGateway($(this).val());
@@ -43,8 +42,9 @@ jQuery( function( $ ) {
     function selectGateway(selectedGateway) {
         const $placeOrderBtn = $checkout_form.find('#place_order');
         $placeOrderBtn.show();
-        googlePay && googlePay.$container.hide();
-        applePay && applePay.$container.hide();
+
+        googlePay && debounce(googlePay.renderButton(), 200);
+        applePay && debounce(applePay.renderButton(), 200);
 
         if (['dnapayments', 'dnapayments_google_pay', 'dnapayments_apple_pay'].includes(selectedGateway)) {
             $checkout_form.find('.dnapayments-footer').show();
@@ -54,20 +54,14 @@ jQuery( function( $ ) {
 
         switch (selectedGateway) {
             case 'dnapayments_google_pay':
-                $placeOrderBtn.hide();
-                googlePay && googlePay.$container.show();
-                break;
             case 'dnapayments_apple_pay':
                 $placeOrderBtn.hide();
-                applePay && applePay.$container.show();
                 break;
         }
     }    
 
     $( document.body ).on( 'updated_checkout', function() {
-
-        googlePay && googlePay.renderButton();
-        applePay && applePay.renderButton();
+        
         selectGateway($('input[name="payment_method"]:checked').val());
 
         if (isHostedFields) {
@@ -186,64 +180,57 @@ jQuery( function( $ ) {
     }
 
     function createPaymentComponent({
-        paymentMethodId, paymentMethodObject
+        paymentMethodId,
+        paymentMethodObject,
+        errorMessage
     }) {
-        const findContainer = () => $checkout_form.find('#' + paymentMethodId + '_container');
-        const findInList = () => $checkout_form.find('.payment_method_' + paymentMethodId);
 
         if ( ! availableGateways?.includes(paymentMethodId)) {
             return null
         }
 
         return {
-            isLoaded: false,
-            returnUrl: '',
-            $listItem: findInList(),
-            $container: findContainer(),
-            renderButton: function() {
+            paymentData: null,
+            token: null,
+            renderButton: async function() {
+                const $container = $checkout_form.find('#' + paymentMethodId + '_container');
 
-                this.$listItem = findInList();
-                this.$container = findContainer();
+                // clear container HTML element
+                $container.css('height', '0px').html('');
 
-                this.$listItem.hide();
-                this.$container.css('height', '46px').html('');
-
-                let totalAmount = 0;
-
-                try {
-                    const total = Number(wc_dna_params.total.total);
-                    if (total && !isNaN(total)) {
-                        totalAmount = total;
-                    }
-                } catch (err) {
-                    console.error(err);
+                if (paymentMethodId !== getSelectedGateway()) {
+                    return;
                 }
 
-                const fetchPaymentData = async () => {
-                    const { paymentData, auth } = await processPayment();
-                    this.returnUrl = paymentData.paymentSettings.returnUrl;
-                    return { paymentData, token: auth.access_token };
+                $container.css('height', '46px');
+                setLoading($container, true);
+
+                const totalAmount = getTotalAmount();
+                // alert('totalAmount: ' + totalAmount);
+
+                if (!this.paymentData || this.paymentData.amount !== totalAmount) {
+                    try {
+                        const response = await processPayment();
+                        this.paymentData = response.paymentData;
+                        this.token = response.auth.access_token;
+                        formLoader.hide();
+                    } catch (err) {
+                        console.error(err);
+                        setLoading($container, false);
+                        formLoader.hide();
+                        return;
+                    }
                 }
 
                 const events = {
                     onClick: () => {
-                        const amount = parseFloat(jQuery('.order-total .woocommerce-Price-amount.amount').first().text().replace(/[^\d.-]/g, ''));
-
-                        return {
-                            paymentData: {
-                                amount: (amount && !isNaN(amount) ? amount : totalAmount),
-                                currency: currencyCode,
-                                paymentSettings: {
-                                    terminalId,
-                                },
-                            }
-                        }
+                        formLoader.show();
                     },
-                    onBeforeProcessPayment: fetchPaymentData,
                     onPaymentSuccess: (result) => {
                         formLoader.hide();
-                        if (this.returnUrl) {
-                            window.location.href = this.returnUrl;
+                        const returnUrl = this.paymentData?.paymentSettings?.returnUrl;
+                        if (returnUrl) {
+                            window.location.href = returnUrl;
                         }
                     },
                     onCancel: (err) => {
@@ -252,32 +239,30 @@ jQuery( function( $ ) {
                     onError: (err) => {
                         console.error(err)
                         formLoader.hide();
+
                         if ([
                             1002, // Failed to initialize the Google / Apple Pay button
                             1003  // Failed to validate the Google / Apple Pay session
                         ].indexOf(err.code) < 0) {
                             const message = err.message || 'Your card has not been authorised, please check the details and retry or contact your bank.'
                             showError( '<div class="woocommerce-error">' + message + '</div>' );
+                        } else {
+                            $container.html('<div class="woocommerce-error">' + errorMessage + '</div>');                            
                         }
                     },
                     onLoad: () => {
-                        this.isLoaded = true;
-                        this.$listItem.show();
-                        this.$container.find('div').css('height', '40px');
+                        $container.find('div').css('height', '40px');
                     }
                 }
-                
+               
                 paymentMethodObject.create(
-                    this.$container[0],
-                    {
-                        amount: totalAmount,
-                        paymentSettings: {
-                            terminalId,
-                        }
-                    },
+                    $container[0],
+                    this.paymentData,
                     events,
-                    tempToken
+                    this.token
                 );
+
+                setLoading($container, false);
             }
         }
     }
@@ -421,13 +406,7 @@ jQuery( function( $ ) {
                 const form_data = $checkout_form.data();
     
                 if ( 1 !== form_data['blockUI.isBlocked'] ) {
-                    $checkout_form.block({
-                        message: null,
-                        overlayCSS: {
-                            background: '#fff',
-                            opacity: 0.6
-                        }
-                    });
+                    setLoading($checkout_form, true);
                 }
             }
         }
@@ -460,3 +439,31 @@ jQuery( function( $ ) {
     }
 
 } );
+
+function setLoading($elem, isLoading) {
+    if (isLoading) {
+        $elem.block({
+            message: null,
+            overlayCSS: {
+                background: '#fff',
+                opacity: 0.6
+            }
+        });
+    } else {
+        $elem.unblock();
+    }
+}
+
+function getTotalAmount() {
+    try {
+        const obj = jQuery('#wc-' + gateway_id + '-totals').data('totals')
+        return Number(obj.total);
+    } catch (err) {
+        console.error(err);
+        return 0;
+    }
+}
+
+function getSelectedGateway() {
+    return jQuery('input[name="payment_method"]:checked').val();
+}

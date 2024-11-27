@@ -1,8 +1,8 @@
 <?php return array(
     'root' => array(
         'name' => 'dna/woocommerce',
-        'pretty_version' => '3.0.4',
-        'version' => '3.0.4.0',
+        'pretty_version' => '3.0.5',
+        'version' => '3.0.5.0',
         'reference' => null,
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
@@ -20,8 +20,8 @@
             'dev_requirement' => false,
         ),
         'dna/woocommerce' => array(
-            'pretty_version' => '3.0.4',
-            'version' => '3.0.4.0',
+            'pretty_version' => '3.0.5',
+            'version' => '3.0.5.0',
             'reference' => null,
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
@@ -38,9 +38,9 @@
             'dev_requirement' => false,
         ),
         'guzzlehttp/promises' => array(
-            'pretty_version' => '2.0.3',
-            'version' => '2.0.3.0',
-            'reference' => '6ea8dd08867a2a42619d65c3deb2c0fcbf81c8f8',
+            'pretty_version' => '2.0.4',
+            'version' => '2.0.4.0',
+            'reference' => 'f9c436286ab2892c7db7be8c8da4ef61ccf7b455',
             'type' => 'library',
             'install_path' => __DIR__ . '/../guzzlehttp/promises',
             'aliases' => array(),

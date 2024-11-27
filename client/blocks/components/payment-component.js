@@ -16,7 +16,7 @@ export const PaymentComponent = ({ containerId, componentInstance, gatewayId, er
     const [messages, setMessages] = useState([])
 
     // pay button container
-    const containerRef = useRef()
+    const containerRef = useRef(null)
     // process payment result
     const paymentResultRef = useRef()
 
@@ -54,6 +54,8 @@ export const PaymentComponent = ({ containerId, componentInstance, gatewayId, er
             const { paymentData, auth } = await fetchPaymentAndAuthData(props)
 
             paymentResultRef.current = null
+
+            containerRef.current.innerHTML = ''
 
             componentInstance.create(
                 containerRef.current,

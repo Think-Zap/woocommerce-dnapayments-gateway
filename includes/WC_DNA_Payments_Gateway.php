@@ -713,6 +713,11 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 		global $wp;
 		ob_start();
 
+        $cart = WC()->cart;
+        $total = $cart->is_empty() ? [ 'total' => 0 ] : $cart->get_totals();
+    
+        echo '<div id="wc-' . esc_attr( $this->id ) . '-totals"  data-totals="' . htmlspecialchars(json_encode($total), ENT_QUOTES, 'UTF-8') . '"></div>';
+
         $description = $this->get_description();
         if ( $description ) {
             echo wpautop( wptexturize( $description ) );
