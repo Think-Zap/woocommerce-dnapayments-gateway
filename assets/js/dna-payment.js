@@ -6,14 +6,12 @@ const gateway_id = 'dnapayments'
 jQuery( function( $ ) {
 	'use strict';
 
-    const $checkout_form = $( 'form.woocommerce-checkout' );
+    const orderId = Number(wc_dna_params.order_id || 0);
+    const $checkout_form = orderId ?  $( 'form#order_review' ) : $( 'form.woocommerce-checkout' );
 
     const isTestMode = wc_dna_params.is_test_mode === '1';
     const allowSavingCards = wc_dna_params.allowSavingCards === '1';
     const isHostedFields = wc_dna_params.integration_type === 'hosted-fields';
-    const tempToken = wc_dna_params.temp_token;
-    const currencyCode = wc_dna_params.current_currency_code;
-    const terminalId = wc_dna_params.terminal_id;
     const availableGateways = wc_dna_params.available_gateways || [];
     const cards = Object.values(wc_dna_params.cards || {});
 
@@ -37,11 +35,10 @@ jQuery( function( $ ) {
         selectGateway($(this).val());
     });
 
-    $checkout_form.on('checkout_place_order_dnapayments', onSubmit);
+    $checkout_form.on('submit', onSubmit);
 
     function selectGateway(selectedGateway) {
-        const $placeOrderBtn = $checkout_form.find('#place_order');
-        $placeOrderBtn.show();
+        const placeOrderBtn = document.getElementById('place_order');
 
         googlePay && debounce(googlePay.renderButton(), 200);
         applePay && debounce(applePay.renderButton(), 200);
@@ -55,23 +52,31 @@ jQuery( function( $ ) {
         switch (selectedGateway) {
             case 'dnapayments_google_pay':
             case 'dnapayments_apple_pay':
-                $placeOrderBtn.hide();
+                placeOrderBtn.setAttribute('disabled', 'disabled');
                 break;
+            default:
+                placeOrderBtn.removeAttribute('disabled');
         }
     }    
 
-    $( document.body ).on( 'updated_checkout', function() {
-        
+    $( document.body ).on( 'updated_checkout', init);
+
+    // On the Pay for Order page, ensure initialization
+    if ($('body').hasClass('woocommerce-order-pay')) {
+        init();
+    }
+
+    function init() {
         selectGateway($('input[name="payment_method"]:checked').val());
 
         if (isHostedFields) {
             debounce(createHostedFields, 200)();
         }
-    });
+    }
 
     function onSubmit(e) {
         // wc_checkout_params is required to continue, ensure the object exists
-        if ( typeof wc_checkout_params === 'undefined' ) {
+        if ( typeof wc_checkout_params === 'undefined' || getSelectedGateway() !== gateway_id ) {
             return false;
         }
 
@@ -97,16 +102,23 @@ jQuery( function( $ ) {
         return new Promise(function (resolve, reject) {
             try {
                 formLoader.show();
+                const url = orderId ? '/wp-admin/admin-ajax.php?action=get_payment_and_auth_data' : wc_checkout_params.checkout_url;
+                const data = orderId ? 'order_id=' + orderId : $( 'form.checkout' ).serialize();
+                
                 $.ajax({
                     type: 'POST',
-                    url: wc_checkout_params.checkout_url,
-                    data: $( 'form.checkout' ).serialize(),
+                    url: url,
+                    data: data,
                     dataType: 'json',
                     success: function(result) {
                         if(result.result == 'success') {
                             try {
-                                result.paymentData = JSON.parse(result.paymentData);
-                                result.auth = JSON.parse(result.auth);
+                                if (typeof result.paymentData === 'string') {
+                                    result.paymentData = JSON.parse(result.paymentData);
+                                }
+                                if (typeof result.auth === 'string') {
+                                    result.auth = JSON.parse(result.auth);
+                                }
                             } catch ( err) {
                                 console.error(err)
                             }
@@ -269,6 +281,7 @@ jQuery( function( $ ) {
 
     async function createHostedFields() {
         const $card_form = $('#wc-' + gateway_id + '-form');
+        const $cc_form = $('#wc-' + gateway_id + '-cc-form');
         const $payment_token = $('input[name="wc-' + gateway_id + '-payment-token"]');
         const $tokenized_cvc = $('#dna-card-cvc-token-container')
 
@@ -320,7 +333,7 @@ jQuery( function( $ ) {
             }
         }
         
-        try {            
+        try {
             hostedFieldsInstance = await window.dnaPayments.hostedFields.create(options);
             if (instanceId !== hostedFieldsInstanceId) return
 
@@ -337,6 +350,7 @@ jQuery( function( $ ) {
             function onPaymentTokenChange(selected) {
                 if (!selected || selected === 'new') {
                     $tokenized_cvc.hide();
+                    $cc_form.show();
                     hostedFieldsInstance.selectCard(null);
                 } else {
                     const card = cards.find((c) => String(c.id) === String(selected));
@@ -348,6 +362,7 @@ jQuery( function( $ ) {
                         $tokenized_cvc.hide();
                     }
                     hostedFieldsInstance.selectCard(card);
+                    $cc_form.hide();
                 }
             }
     

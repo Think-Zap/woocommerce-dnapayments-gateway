@@ -1,6 +1,12 @@
 <?php
 
 class WC_Gateway_DNA_Base_Payment_Component extends WC_Payment_Gateway {
+    /**
+	 * True if the gateway shows fields on the checkout.
+	 *
+	 * @var bool
+	 */
+	public $has_fields = true;
 
     public function __construct() {
 
@@ -115,5 +121,22 @@ class WC_Gateway_DNA_Base_Payment_Component extends WC_Payment_Gateway {
         );
         
 	}
+
+    /**
+	 * Payment form on checkout page
+	 */
+	public function payment_fields() {
+		global $wp;
+		ob_start();
+
+        $description = $this->get_description();
+        if ( $description ) {
+            echo wpautop( wptexturize( $description ) );
+        }
+
+        echo '<div id="' . $this->id . '_container"></div>';
+
+        ob_end_flush();
+    }
 
 }

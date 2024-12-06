@@ -3,7 +3,7 @@
  * Plugin Name: WooCommerce DNA Payments Gateway
  * Plugin URI: https://www.dnapayments.com
  * Description: Take credit card payments on your store.
- * Version: 3.0.5
+ * Version: 3.0.6
  *
  * Author: DNA Payments Integration
  * Author URI: https://www.dnapayments.com
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'WC_DNA_PLUGIN_PATH', untrailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'WC_DNA_MAIN_FILE', __FILE__ );
 define( 'WC_DNA_ID', 'dnapayments' );
-define( 'WC_DNA_VERSION', '3.0.5' );
+define( 'WC_DNA_VERSION', '3.0.6' );
 define( 'WC_DNA_MIN_PHP_VER', '5.6.0' );
 define( 'WC_DNA_MIN_WC_VER', '3.0' );
 
@@ -42,7 +42,7 @@ class WC_DNA_Payments {
 	public static $id = 'dnapayments';
 
 	// Plugin version
-	public static $version = '3.0.5';
+	public static $version = '3.0.6';
 
 	// Wordpress supported min version
 	public static $wp_min_version = '';
@@ -187,9 +187,7 @@ class WC_DNA_Payments {
 	}
 
 	public static function add_custom_elements() {
-		echo '<div id="dnapayments_apple_pay_container"></div>' .
-            '<div id="dnapayments_google_pay_container"></div>' .
-            '<div class="dnapayments-footer" style="display: none"><p>Powered by </p><img src="' . plugins_url('assets/img/dnapayments-logo.svg', WC_DNA_MAIN_FILE) .'" /></div>';
+		echo '<div class="dnapayments-footer" style="display: none"><p>Powered by </p><img src="' . plugins_url('assets/img/dnapayments-logo.svg', WC_DNA_MAIN_FILE) .'" /></div>';
 	}
 }
 
