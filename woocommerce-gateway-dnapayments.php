@@ -3,7 +3,7 @@
  * Plugin Name: WooCommerce DNA Payments Gateway
  * Plugin URI: https://www.dnapayments.com
  * Description: Take credit card payments on your store.
- * Version: 3.0.6
+ * Version: 3.0.7
  *
  * Author: DNA Payments Integration
  * Author URI: https://www.dnapayments.com
@@ -14,7 +14,7 @@
  * Requires at least: 4.2
  * Tested up to: 6.5
  * WC requires at least: 4.8
- * WC tested up to: 8.9
+ * WC tested up to: 9.4
  * Requires PHP: 7.4
  * PHP tested up to: 8.3
  */
@@ -27,7 +27,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 define( 'WC_DNA_PLUGIN_PATH', untrailingslashit( plugin_dir_path( __FILE__ ) ) );
 define( 'WC_DNA_MAIN_FILE', __FILE__ );
 define( 'WC_DNA_ID', 'dnapayments' );
-define( 'WC_DNA_VERSION', '3.0.6' );
+define( 'WC_DNA_VERSION', '3.0.7' );
 define( 'WC_DNA_MIN_PHP_VER', '5.6.0' );
 define( 'WC_DNA_MIN_WC_VER', '3.0' );
 
@@ -42,7 +42,7 @@ class WC_DNA_Payments {
 	public static $id = 'dnapayments';
 
 	// Plugin version
-	public static $version = '3.0.6';
+	public static $version = '3.0.7';
 
 	// Wordpress supported min version
 	public static $wp_min_version = '';
@@ -91,7 +91,7 @@ class WC_DNA_Payments {
 
 	public static function before_woocommerce_hpos() {
 		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) { 
-			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true ); 
+			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
 		}
 	}
 

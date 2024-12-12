@@ -25,6 +25,13 @@ const label = decodeEntities(settings?.title || '') || defaultLabel
 /**
  * Content component
  */
+const RawContent = (props) => {
+    return <RawHTML>{decodeEntities(settings.description || '')}</RawHTML>
+}
+
+/**
+ * Content component
+ */
 const Content = (props) => {
     const [isLoaded, setLoaded] = useState(false)
     const [hostedFieldsInstance, setHostedFieldsInstance] = useState(null)
@@ -71,7 +78,7 @@ const dnapaymentsPaymentMethod = {
     name: GATEWAY_ID,
     label: <Label />,
     content: <Content />,
-    edit: <Content />,
+    edit: <RawContent />,
     canMakePayment: () => true,
     savedTokenComponent: <Content />,
     ariaLabel: label,

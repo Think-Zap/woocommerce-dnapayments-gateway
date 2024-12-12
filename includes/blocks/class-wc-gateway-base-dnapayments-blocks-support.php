@@ -71,7 +71,7 @@ abstract class WC_Gateway_Base_DNA_Payments_Blocks_Support extends AbstractPayme
 		$asset_path   = $this->asset_path;
 		$version      = WC_DNA_Payments::$version;
 		$script_name  = 'wc-' . $this->name . '-blocks-integration';
-		$dependencies = [ 'dna-payment-api', 'dna-hosted-fields', 'dna-google-pay', 'dna-apple-pay'];
+		$dependencies = is_admin() ? [] : [ 'dna-payment-api', 'dna-hosted-fields', 'dna-google-pay', 'dna-apple-pay'];
 
 		if ( file_exists( $asset_path ) ) {
 			$asset = require $asset_path;
@@ -104,16 +104,6 @@ abstract class WC_Gateway_Base_DNA_Payments_Blocks_Support extends AbstractPayme
 		}
 
 		return array( $script_name );
-	}
-
-	/**
-	 * Returns an array of script handles to enqueue for this payment method in
-	 * the admin context
-	 *
-	 * @return string[]
-	 */
-	public function get_payment_method_script_handles_for_admin() {
-		return [];
 	}
 
 	/**
