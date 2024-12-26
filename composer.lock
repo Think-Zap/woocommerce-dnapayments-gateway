@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "70a3793c7bfaf8c64b052adeabd9b6af",
+    "content-hash": "ec471bcd0c712b6cbb91c63a2ad6ac09",
     "packages": [
         {
             "name": "dna/dnapayments-sdk-php",

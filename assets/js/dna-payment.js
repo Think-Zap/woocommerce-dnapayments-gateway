@@ -6,8 +6,8 @@ const gateway_id = 'dnapayments'
 jQuery( function( $ ) {
 	'use strict';
 
-    const orderId = Number(wc_dna_params.order_id || 0);
-    const $checkout_form = orderId ?  $( 'form#order_review' ) : $( 'form.woocommerce-checkout' );
+    let orderId = Number(wc_dna_params.order_id) || Number(wc_dna_params.session_order_id) || 0;
+    const $checkout_form = Number(wc_dna_params.order_id) ?  $( 'form#order_review' ) : $( 'form.woocommerce-checkout' );
 
     const isTestMode = wc_dna_params.is_test_mode === '1';
     const allowSavingCards = wc_dna_params.allowSavingCards === '1';
@@ -95,7 +95,7 @@ jQuery( function( $ ) {
         }
 
         const result = await processPayment();
-        pay(result);   
+        pay(result);
     }
 
     function processPayment() {
@@ -103,7 +103,7 @@ jQuery( function( $ ) {
             try {
                 formLoader.show();
                 const url = orderId ? '/wp-admin/admin-ajax.php?action=get_payment_and_auth_data' : wc_checkout_params.checkout_url;
-                const data = orderId ? 'order_id=' + orderId : $( 'form.checkout' ).serialize();
+                const data = orderId ? 'order_id=' + orderId + '&total=' + getTotalAmount() : $( 'form.checkout' ).serialize();
                 
                 $.ajax({
                     type: 'POST',
@@ -120,7 +120,11 @@ jQuery( function( $ ) {
                                     result.auth = JSON.parse(result.auth);
                                 }
                             } catch ( err) {
-                                console.error(err)
+                                console.error(err);
+                            }
+                            
+                            if (result.paymentData.invoiceId) {
+                                orderId = result.paymentData.invoiceId;
                             }
                             resolve(result);
                             return;
@@ -218,7 +222,6 @@ jQuery( function( $ ) {
                 setLoading($container, true);
 
                 const totalAmount = getTotalAmount();
-                // alert('totalAmount: ' + totalAmount);
 
                 if (!this.paymentData || this.paymentData.amount !== totalAmount) {
                     try {

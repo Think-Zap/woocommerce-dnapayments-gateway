@@ -72,6 +72,9 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
         add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts') );
 
+        // update order if cart updates (coupon added, shipping address changed)
+        add_action('woocommerce_cart_updated', array( $this, 'update_order_after_cart_changes' ));
+
         add_action( 'rest_api_init', array( $this, 'register_routes' ));
         add_action('wp_ajax_add_card_payment_data', array($this, 'add_card_payment_data'));
         add_action('wp_ajax_get_payment_and_auth_data', array($this, 'get_payment_and_auth_data'));
@@ -90,7 +93,8 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             'isTestMode' => $this->is_test_mode,
             'scopes' => [
                 'allowHosted' => true,
-                'allowEmbedded' => $this->integration_type == 'embedded'
+                'allowEmbedded' => in_array($this->integration_type, ['embedded', 'hosted-fields']),
+                'allowSeamless' => $this->integration_type == 'hosted-fields'
             ]
         ];
     }
@@ -426,9 +430,6 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             return;
         }
 
-        $cart = WC()->cart;
-        $total = $cart->is_empty() ? [ 'total' => 0 ] : $cart->get_totals();
-
         wp_register_style( 'dna_styles', plugins_url( 'assets/css/dna-payment.css', WC_DNA_MAIN_FILE ), [], WC_DNA_VERSION );
 		wp_enqueue_style( 'dna_styles' );
 
@@ -451,11 +452,11 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 'temp_token' => $this->temp_token(),
                 'terminal_id' => $this->terminal,
                 'order_id' => absint(get_query_var('order-pay')),
+                'session_order_id' => WC()->session->get('order_awaiting_payment'),
                 'current_currency_code' => get_woocommerce_currency(),
                 'available_gateways' => array_keys(WC()->payment_gateways->get_available_payment_gateways()),
                 'allowSavingCards' => $this->enabled_saved_cards && !$is_guest,
                 'send_callback_every_failed_attempt' => $this->get_option( 'failed_attempts_limit' ),
-                'total' => $total,
                 'cards' => $this->enabled_saved_cards ? WC_DNA_Payments_Order_Client_Helpers::getCardTokens( $current_user_id, $this->id ) : []
             );
         }        
@@ -521,7 +522,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
     }
 
     public function process_payment( $order_id ) {
-        global $woocommerce;        
+        global $woocommerce;
 
         $order = wc_get_order( $order_id );
 
@@ -647,7 +648,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         $paymentData = [
             'invoiceId' => strval($order->get_order_number()),
             'description' => $this->get_option('gatewayOrderDescription'),
-            'amount' => $total_amount,
+            'amount' => floatval($total_amount),
             'currency' => $order->get_currency(),
             'language' => 'en-gb',
             'paymentSettings' => [
@@ -694,7 +695,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
         $cart = WC()->cart;
         $total = $cart->is_empty() ? [ 'total' => 0 ] : $cart->get_totals();
-    
+
         echo '<div id="wc-' . esc_attr( $this->id ) . '-totals"  data-totals="' . htmlspecialchars(json_encode($total), ENT_QUOTES, 'UTF-8') . '"></div>';
 
         $description = $this->get_description();
@@ -799,4 +800,18 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
 		<?php
 	}
+
+    public function update_order_after_cart_changes() {
+        $order_id = WC()->session->get('order_awaiting_payment');
+        $order = $order_id ? wc_get_order($order_id) : null;
+
+        if ($order) {
+            // Update shipping, discounts, and total
+            $order->set_shipping_total(WC()->cart->get_shipping_total());
+            $order->set_discount_total(WC()->cart->get_discount_total());
+            $order->set_total(WC()->cart->get_total());
+
+            $order->save();
+        }    
+    }
 }
