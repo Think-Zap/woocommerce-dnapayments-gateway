@@ -7,7 +7,8 @@ jQuery( function( $ ) {
 	'use strict';
 
     let orderId = Number(wc_dna_params.order_id) || Number(wc_dna_params.session_order_id) || 0;
-    const $checkout_form = Number(wc_dna_params.order_id) ?  $( 'form#order_review' ) : $( 'form.woocommerce-checkout' );
+    const isPayForOrderPage = Boolean(Number(wc_dna_params.order_id));
+    const $checkout_form = isPayForOrderPage ?  $( 'form#order_review' ) : $( 'form.woocommerce-checkout' );
 
     const isTestMode = wc_dna_params.is_test_mode === '1';
     const allowSavingCards = wc_dna_params.allowSavingCards === '1';
@@ -35,13 +36,13 @@ jQuery( function( $ ) {
         selectGateway($(this).val());
     });
 
-    $checkout_form.on('submit', onSubmit);
+    $checkout_form.on(isPayForOrderPage ? 'submit' : 'checkout_place_order_dnapayments', onSubmit);
 
     function selectGateway(selectedGateway) {
         const placeOrderBtn = document.getElementById('place_order');
 
-        googlePay && debounce(googlePay.renderButton(), 200);
-        applePay && debounce(applePay.renderButton(), 200);
+        googlePay && debounce(googlePay.renderButton.bind(googlePay), 200)();
+        applePay && debounce(applePay.renderButton.bind(applePay), 200)();
 
         if (['dnapayments', 'dnapayments_google_pay', 'dnapayments_apple_pay'].includes(selectedGateway)) {
             $checkout_form.find('.dnapayments-footer').show();
@@ -80,7 +81,7 @@ jQuery( function( $ ) {
             return false;
         }
 
-        handlePlaceOrder();
+        debounce(handlePlaceOrder, 200)();
 
         return false;
     }

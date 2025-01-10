@@ -126,7 +126,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
             return !empty($result) && $result['success'];
         } catch (Exception $e) {
-            $logger->error('Code: ' . $e->getCode() . '; Message: ' . $e->getMessage());
+            $logger->error('Code: ' . $e->getCode() . '; Message: ' . $e->getMessage(), [ 'source' => $this->id ]);
             return false;
         }
 
@@ -188,7 +188,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
             return !empty($result) && $result['success'];
         } catch (Exception $e) {
-            $logger->error('Code: ' . $e->getCode() . '; Message: ' . $e->getMessage());
+            $logger->error('Code: ' . $e->getCode() . '; Message: ' . $e->getMessage(), [ 'source' => $this->id ]);
             return false;
         }
 
@@ -258,126 +258,253 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         $order->save();
     }
 
-    public function success_webhook( $input ) {
+    public function success_webhook($input) {
+        $logger = wc_get_logger();
+        $log_source = $this->id;
 
-        if (!empty($input) && !empty($input['invoiceId']) && $input['success'] && $this->dnaPayment::isValidSignature($input, $this->client_secret)) {
-            
+        try {
+            // Validate input
+            if (empty($input) || empty($input['invoiceId'])) {
+                throw new Exception('Invoice ID is missing or invalid.', 400);
+            }
+
+            if (!$input['success']) {
+                throw new Exception('Transaction was not successful.', 400);
+            }
+
+            if (!$this->dnaPayment::isValidSignature($input, $this->client_secret)) {
+                throw new Exception('Invalid signature.', 403);
+            }
+
+            // Initialize variables
             $orderId = null;
             $storeCardOnFile = false;
+
+            // Parse merchant custom data
             if (isset($input['merchantCustomData'])) {
                 try {
-                    $customData         = json_decode($input['merchantCustomData']);
-                    $orderId            = $customData->orderId;
-                    $storeCardOnFile    = $customData->storeCardOnFile;
+                    $customData = json_decode($input['merchantCustomData']);
+                    $orderId = $customData->orderId;
+                    $storeCardOnFile = $customData->storeCardOnFile ?? false;
                 } catch (Exception $e) {
                     $orderId = null;
+                    $logger->warning('Error parsing merchantCustomData: ' . $e->getMessage(), ['source' => $log_source]);
                 }
             }
 
-            if (!isset($orderId) || empty($orderId)) {
+            // Find order ID if not already set
+            if (empty($orderId)) {
                 $orderId = WC_DNA_Payments_Order_Admin_Helpers::findOrderByOrderNumber($input['invoiceId']);
+                if (empty($orderId)) {
+                    throw new Exception('Order ID could not be determined for invoiceId: ' . $input['invoiceId'], 400);
+                }
             }
 
-            $order = wc_get_order( $orderId );
-            $status = $order->get_status();
-            
+            // Fetch order
+            $order = wc_get_order($orderId);
             if (!$order) {
-                throw new Error('Not found order by id ' . $orderId);
+                throw new Exception('Order not found for ID: ' . $orderId, 400);
             }
-
-            if(!WC_DNA_Payments_Order_Client_Helpers::isDNAPaymentOrder($order)) {
-                throw new Error('Order processed by payment method ' . $order->get_payment_method());
+    
+            $status = $order->get_status();
+            $new_status = 'processing';
+    
+            $logger->info('Processing success webhook for order ID ' . $orderId . ' with status ' . $status, ['source' => $log_source]);
+    
+            // Validate order
+            if (!WC_DNA_Payments_Order_Client_Helpers::isDNAPaymentOrder($order)) {
+                throw new Exception('Order processed by a different payment method: ' . $order->get_payment_method(), 400);
             }
-
-            $isCompletedOrder = $status !== 'pending' && $status !== 'failed';
-
-            if(!$isCompletedOrder) {
-                $order->set_transaction_id($input['id']);
-                if($input['settled']) {
-                    $order->payment_complete();
-                    $order->add_order_note( sprintf( __( 'DNA Payments transaction complete (Transaction ID: %s)', 'woocommerce-gateway-dna' ), $input['id']) );
-
-                    if ( 'yes' === $this->get_option( 'enable_order_complete' ) ) {
-                        $order->update_status('completed');
-                    }
-                } else {
-                    $order->update_status('on-hold');
-                    $order->add_order_note( sprintf( __( 'DNA Payments awaiting payment complete (Transaction ID: %s)', 'woocommerce-gateway-dna' ), $input['id']) );
+    
+            if (!in_array($status, ['pending', 'failed'])) {
+                if (!empty($input['paypalCaptureStatus'])) {
+                    $this->savePayPalOrderDetail($order, $input, true);
                 }
-
-                $order->update_meta_data('rrn', $input['rrn']);
-                $order->update_meta_data('payment_method', $input['paymentMethod']);
-                $order->update_meta_data('is_finished_payment', $input['settled'] ? 'yes' : 'no');
-
-                if(!empty($input['paypalCaptureStatus'])) {
-                    $this->savePayPalOrderDetail($order, $input, false);
-                }
-
-                $manage_stock_option = get_option('woocommerce_manage_stock');
-                // if the order status changed from pending to processing (on-hold), woocommerce automatically reduces stock
-                if ($manage_stock_option !== 'yes' || $status !== 'pending') {
-                    $order->reduce_order_stock();
-                    $order->add_order_note( sprintf( __( 'DNA Payments reduced order stock by transaction (Transaction ID: %s)', 'woocommerce-gateway-dna' ), $input['id']) );
-                }
-
-                $order->save();
-            } else if (!empty($input['paypalCaptureStatus'])) {
-                $this->savePayPalOrderDetail($order, $input, true);
+                throw new Exception('Order with ID ' . $orderId . ' is already processed with status: ' . $status, 400);
             }
 
-            if ($this->enabled_saved_cards && ($order->get_meta('save_payment_method_requested', true) == 'yes' || $input['storeCardOnFile'] || $storeCardOnFile)) {
-                WC_DNA_Payments_Order_Client_Helpers::saveCardToken( $input, $this->id );
+            // Update order transaction ID
+            $order->set_transaction_id($input['id']);
+
+            // Handle settlement
+            if ($input['settled']) {
+                $order->payment_complete();
+                $order->add_order_note(sprintf(__('DNA Payments transaction complete (Transaction ID: %s)', 'woocommerce-gateway-dna'), $input['id']));
+
+                if ('yes' === $this->get_option('enable_order_complete')) {
+                    $order->update_status('completed');
+                    $new_status = 'completed';
+                }
+            } else {
+                $order->update_status('on-hold');
+                $new_status = 'on-hold';
+                $order->add_order_note(sprintf(__('DNA Payments awaiting payment completion (Transaction ID: %s)', 'woocommerce-gateway-dna'), $input['id']));
             }
-        } else {
-            return;
+
+            // Log status change
+            $order->add_order_note(sprintf(__('DNA Payments updated order status from %s to %s.', 'woocommerce-gateway-dna'), ucfirst($status), ucfirst($new_status)));
+    
+            // Update metadata
+            $order->update_meta_data('rrn', $input['rrn'] ?? '');
+            $order->update_meta_data('payment_method', $input['paymentMethod'] ?? '');
+            $order->update_meta_data('is_finished_payment', $input['settled'] ? 'yes' : 'no');
+    
+            if (!empty($input['paypalCaptureStatus'])) {
+                $this->savePayPalOrderDetail($order, $input, false);
+            }
+    
+            // Handle stock reduction
+            $manage_stock_option = get_option('woocommerce_manage_stock');
+            if ($manage_stock_option !== 'yes' || $status !== 'pending') {
+                $order->reduce_order_stock();
+                $order->add_order_note(sprintf(__('DNA Payments reduced order stock (Transaction ID: %s)', 'woocommerce-gateway-dna'), $input['id']));
+            }
+    
+            $order->save();
+            $logger->info('Processed success webhook for order ID ' . $orderId . ' with status ' . $status, ['source' => $log_source]);
+    
+            // Handle saving card tokens
+            if ($this->enabled_saved_cards && ($order->get_meta('save_payment_method_requested', true) === 'yes' || $input['storeCardOnFile'] || $storeCardOnFile)) {
+                WC_DNA_Payments_Order_Client_Helpers::saveCardToken($input, $this->id);
+                $logger->info('Card token saved for order ID ' . $orderId, ['source' => $log_source]);
+            }
+
+            return rest_ensure_response([
+                'success' => true,
+                'message' => 'Success webhook processed successfully.',
+            ]);
+        } catch (Exception $e) {
+            $logger->error('Error in success_webhook: ' . $e->getMessage(), ['source' => $log_source]);
+            $logger->error('Stack trace: ' . $e->getTraceAsString(), ['source' => $log_source]);
+            
+            // Respond with the error message and code
+            return new WP_Error(
+                $this->id . '_error',
+                $e->getMessage(),
+                array(
+                    'status' => $e->getCode() ? $e->getCode() : 500,
+                    'stack_trace' => $e->getTraceAsString(),
+                )
+            );
         }
     }
 
     public function fail_webhook( WP_REST_Request $input ) {
+        $logger = wc_get_logger();
+        $log_source = $this->id;
 
-        if ($input && !empty($input['invoiceId']) && !$input['success'] && $this->dnaPayment::isValidSignature($input, $this->client_secret)) {
-
-            $orderId = $input->get_query_params()['orderId'];
-            if (!isset($orderId) || empty($orderId)) {
-                $orderId = WC_DNA_Payments_Order_Admin_Helpers::findOrderByOrderNumber($input['invoiceId']);
+        try {
+            // Validate input
+            if (empty($input) || empty($input['invoiceId'])) {
+                throw new Exception('Invoice ID is missing or invalid.', 400);
             }
 
-            $order = wc_get_order( $orderId );
-
-            if (!$order) {
-                throw new Error('Not found order by id ' . $orderId);
+            if ($input['success']) {
+                throw new Exception('Transaction was successful.', 400);
             }
 
-            if(!WC_DNA_Payments_Order_Client_Helpers::isDNAPaymentOrder($order)) {
-                throw new Error('Order processed by payment method ' . $order->get_payment_method());
+            if (!$this->dnaPayment::isValidSignature($input, $this->client_secret)) {
+                throw new Exception('Invalid signature.', 403);
             }
 
-            $isCompletedOrder = $order->get_status() !== 'pending';
-            
-            if (!$isCompletedOrder) {
-                $order->update_status('failed', 'Payment failed');
-                if(!empty($input['paypalCaptureStatus'])) {
-                    $this->savePayPalOrderDetail($order, $input, false);
+            // Initialize variables
+            $orderId = null;
+            $storeCardOnFile = false;
+
+            // Parse merchant custom data
+            if (isset($input['merchantCustomData'])) {
+                try {
+                    $customData = json_decode($input['merchantCustomData']);
+                    $orderId = $customData->orderId;
+                    $storeCardOnFile = $customData->storeCardOnFile ?? false;
+                } catch (Exception $e) {
+                    $orderId = null;
+                    $logger->warning('Error parsing merchantCustomData: ' . $e->getMessage(), ['source' => $log_source]);
                 }
-                $order->save();
-            } else if (!empty($input['paypalCaptureStatus'])) {
-                $this->savePayPalOrderDetail($order, $input, true);
             }
 
-        } else {
-            return;
+            // Find order ID if not already set
+            if (empty($orderId)) {
+                $orderId = WC_DNA_Payments_Order_Admin_Helpers::findOrderByOrderNumber($input['invoiceId']);
+                if (empty($orderId)) {
+                    throw new Exception('Order ID could not be determined for invoiceId: ' . $input['invoiceId'], 400);
+                }
+            }
+
+            // Fetch order
+            $order = wc_get_order($orderId);
+            if (!$order) {
+                throw new Exception('Order not found for ID: ' . $orderId, 400);
+            }
+
+            if(!empty($input['paypalCaptureStatus'])) {
+                $this->savePayPalOrderDetail($order, $input, false);
+            }
+            
+            if ($order->get_status() !== 'pending') {
+                throw new Exception('Order with ID ' . $orderId . ' is already processed with status: ' . $order->get_status(), 400);
+            }
+
+            $order->update_status('failed', 'Payment failed');
+            $order->save();
+        
+            return rest_ensure_response([
+                'success' => true,
+                'message' => 'Failure webhook processed successfully.',
+            ]);
+        } catch (Exception $e) {
+            $logger->error('Error in fail_webhook: ' . $e->getMessage(), ['source' => $log_source]);
+            $logger->error('Stack trace: ' . $e->getTraceAsString(), ['source' => $log_source]);
+            
+            // Respond with the error message and code
+            return new WP_Error(
+                $this->id . '_error',
+                $e->getMessage(),
+                array(
+                    'status' => $e->getCode() ? $e->getCode() : 500,
+                    'stack_trace' => $e->getTraceAsString(),
+                )
+            );
         }
     }
 
     public function success_webhook_add_card( WP_REST_Request $input ) {
-        if (
-            !empty($input) && 
-            $input['success'] && 
-            $this->dnaPayment::isValidSignature($input, $this->client_secret)
-        ) {
+        $logger = wc_get_logger();
+        $log_source = $this->id;
+
+        try {
+            // Validate input
+            if (empty($input)) {
+                throw new Exception('Input data is empty.', 400);
+            }
+
+            if (!$input['success']) {
+                throw new Exception('Transaction was not successful.', 400);
+            }
+
+            if (!$this->dnaPayment::isValidSignature($input, $this->client_secret)) {
+                throw new Exception('Invalid signature.', 403);
+            }
+
             WC_DNA_Payments_Order_Client_Helpers::saveCardToken( $input, $this->id );
-        } else {
-            return;
+
+            return rest_ensure_response([
+                'success' => true,
+                'message' => 'Add card webhook processed successfully.',
+            ]);
+        } catch (Exception $e) {
+            $logger->error('Error in success_webhook_add_card: ' . $e->getMessage(), ['source' => $log_source]);
+            $logger->error('Stack trace: ' . $e->getTraceAsString(), ['source' => $log_source]);
+            
+            // Respond with the error message and code
+            return new WP_Error(
+                $this->id . '_error',
+                $e->getMessage(),
+                array(
+                    'status' => $e->getCode() ? $e->getCode() : 500,
+                    'stack_trace' => $e->getTraceAsString(),
+                )
+            );
         }
     }
 
