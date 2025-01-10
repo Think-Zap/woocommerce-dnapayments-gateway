@@ -259,6 +259,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
     }
 
     public function success_webhook($input) {
+        $data = $input->get_params();
         $logger = wc_get_logger();
         $log_source = $this->id;
 
@@ -375,6 +376,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             ]);
         } catch (Exception $e) {
             $logger->error('Error in success_webhook: ' . $e->getMessage(), ['source' => $log_source]);
+            $logger->error('Input: ' . json_encode($data), ['source' => $log_source]);
             $logger->error('Stack trace: ' . $e->getTraceAsString(), ['source' => $log_source]);
             
             // Respond with the error message and code
@@ -390,6 +392,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
     }
 
     public function fail_webhook( WP_REST_Request $input ) {
+        $data = $input->get_params();
         $logger = wc_get_logger();
         $log_source = $this->id;
 
@@ -454,6 +457,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             ]);
         } catch (Exception $e) {
             $logger->error('Error in fail_webhook: ' . $e->getMessage(), ['source' => $log_source]);
+            $logger->error('Input: ' . json_encode($data), ['source' => $log_source]);
             $logger->error('Stack trace: ' . $e->getTraceAsString(), ['source' => $log_source]);
             
             // Respond with the error message and code
@@ -469,6 +473,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
     }
 
     public function success_webhook_add_card( WP_REST_Request $input ) {
+        $data = $input->get_params();
         $logger = wc_get_logger();
         $log_source = $this->id;
 
@@ -494,6 +499,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             ]);
         } catch (Exception $e) {
             $logger->error('Error in success_webhook_add_card: ' . $e->getMessage(), ['source' => $log_source]);
+            $logger->error('Input: ' . json_encode($data), ['source' => $log_source]);
             $logger->error('Stack trace: ' . $e->getTraceAsString(), ['source' => $log_source]);
             
             // Respond with the error message and code

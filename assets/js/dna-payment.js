@@ -263,7 +263,8 @@ jQuery( function( $ ) {
                             const message = err.message || 'Your card has not been authorised, please check the details and retry or contact your bank.'
                             showError( '<div class="woocommerce-error">' + message + '</div>' );
                         } else {
-                            $container.html('<div class="woocommerce-error">' + errorMessage + '</div>');                            
+                            $container.html('<div class="woocommerce-error">' + errorMessage + '</div>');
+                            $container.css('height', 'auto');                          
                         }
                     },
                     onLoad: () => {
