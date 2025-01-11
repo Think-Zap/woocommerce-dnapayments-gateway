@@ -317,7 +317,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 throw new Exception('Order processed by a different payment method: ' . $order->get_payment_method(), 400);
             }
     
-            if (!in_array($status, ['pending', 'failed'])) {
+            if (!in_array($status, ['pending', 'failed', 'cancelled'])) {
                 if (!empty($input['paypalCaptureStatus'])) {
                     $this->savePayPalOrderDetail($order, $input, true);
                 }
