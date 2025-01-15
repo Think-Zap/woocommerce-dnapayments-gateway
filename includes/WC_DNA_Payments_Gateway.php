@@ -72,9 +72,6 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         add_action( 'woocommerce_update_options_payment_gateways_' . $this->id, array( $this, 'process_admin_options' ) );
         add_action( 'wp_enqueue_scripts', array( $this, 'payment_scripts') );
 
-        // update order if cart updates (coupon added, shipping address changed)
-        add_action('woocommerce_cart_updated', array( $this, 'update_order_after_cart_changes' ));
-
         add_action( 'rest_api_init', array( $this, 'register_routes' ));
         add_action('wp_ajax_add_card_payment_data', array($this, 'add_card_payment_data'));
         add_action('wp_ajax_get_payment_and_auth_data', array($this, 'get_payment_and_auth_data'));
@@ -357,7 +354,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             // Handle stock reduction
             $manage_stock_option = get_option('woocommerce_manage_stock');
             if ($manage_stock_option !== 'yes' || $status !== 'pending') {
-                $order->reduce_order_stock();
+                wc_reduce_stock_levels($orderId);
                 $order->add_order_note(sprintf(__('DNA Payments reduced order stock (Transaction ID: %s)', 'woocommerce-gateway-dna'), $input['id']));
             }
     
@@ -657,6 +654,24 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
     public function process_payment( $order_id ) {
         global $woocommerce;
 
+        $logger = wc_get_logger();
+        $log_source = $this->id;
+
+        try {
+            $duplicate_order_id = isset( $_POST[ $this->id . '_session_order_id' ] ) ? intval( $_POST[ $this->id . '_session_order_id' ] ) : '';
+            if ( $duplicate_order_id && $duplicate_order_id !== intval( $order_id ) ) {
+                $duplicate_order = wc_get_order( $duplicate_order_id );
+                if ( $duplicate_order && 'pending' === $duplicate_order->get_status() ) {
+                    $duplicate_order->update_status( 'checkout-draft', 'Order was cancelled by ' . $this->id . ' to prevent duplication.' );
+                    wc_release_stock_for_order( $duplicate_order_id );
+                    $logger->info('Order with ID ' . $duplicate_order_id . ' was cancelled by ' . $this->id . ' to prevent duplication.', ['source' => $log_source]);
+                }
+            }
+        } catch (Exception $e) {
+            $logger->error('Error in process_payment: ' . $e->getMessage(), ['source' => $log_source]);
+            $logger->error('Stack trace: ' . $e->getTraceAsString(), ['source' => $log_source]);
+        }
+
         $order = wc_get_order( $order_id );
 
         $response = $this->get_payment_and_auth_data_from_order( $order_id );
@@ -933,18 +948,4 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 
 		<?php
 	}
-
-    public function update_order_after_cart_changes() {
-        $order_id = WC()->session->get('order_awaiting_payment');
-        $order = $order_id ? wc_get_order($order_id) : null;
-
-        if ($order) {
-            // Update shipping, discounts, and total
-            $order->set_shipping_total(WC()->cart->get_shipping_total());
-            $order->set_discount_total(WC()->cart->get_discount_total());
-            $order->set_total(WC()->cart->get_total());
-
-            $order->save();
-        }    
-    }
 }

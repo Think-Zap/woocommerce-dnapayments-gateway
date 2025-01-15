@@ -6,8 +6,10 @@ const gateway_id = 'dnapayments'
 jQuery( function( $ ) {
 	'use strict';
 
-    let orderId = Number(wc_dna_params.order_id) || Number(wc_dna_params.session_order_id) || 0;
-    const isPayForOrderPage = Boolean(Number(wc_dna_params.order_id));
+    let orderId = Number(wc_dna_params.order_id) || 0;
+    let sessionOrderId = Number(wc_dna_params.session_order_id) || 0;
+
+    const isPayForOrderPage = Boolean(orderId);
     const $checkout_form = isPayForOrderPage ?  $( 'form#order_review' ) : $( 'form.woocommerce-checkout' );
 
     const isTestMode = wc_dna_params.is_test_mode === '1';
@@ -103,9 +105,9 @@ jQuery( function( $ ) {
         return new Promise(function (resolve, reject) {
             try {
                 formLoader.show();
-                const url = orderId ? '/wp-admin/admin-ajax.php?action=get_payment_and_auth_data' : wc_checkout_params.checkout_url;
-                const data = orderId ? 'order_id=' + orderId + '&total=' + getTotalAmount() : $( 'form.checkout' ).serialize();
-                
+                const url = isPayForOrderPage ? '/wp-admin/admin-ajax.php?action=get_payment_and_auth_data' : wc_checkout_params.checkout_url;
+                const data = isPayForOrderPage ? 'order_id=' + orderId : $( 'form.checkout' ).serialize() + '&' + serializeObject({ [gateway_id + '_session_order_id']: sessionOrderId });
+
                 $.ajax({
                     type: 'POST',
                     url: url,
@@ -125,7 +127,7 @@ jQuery( function( $ ) {
                             }
                             
                             if (result.paymentData.invoiceId) {
-                                orderId = result.paymentData.invoiceId;
+                                sessionOrderId = result.paymentData.invoiceId;
                             }
                             resolve(result);
                             return;
@@ -457,7 +459,6 @@ jQuery( function( $ ) {
         scrollToNotices();
         $( document.body ).trigger( 'checkout_error' );
     }
-
 } );
 
 function setLoading($elem, isLoading) {
@@ -472,6 +473,12 @@ function setLoading($elem, isLoading) {
     } else {
         $elem.unblock();
     }
+}
+
+function serializeObject(data) {
+    return Object.keys(data)
+        .map((key) => encodeURIComponent(key) + '=' + encodeURIComponent(data[key]))
+        .join('&');
 }
 
 function getTotalAmount() {

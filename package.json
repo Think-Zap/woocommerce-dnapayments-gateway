@@ -1,6 +1,6 @@
 {
     "name": "wc-dnapayments",
-    "version": "3.0.11",
+    "version": "3.0.12",
     "description": "A WooCommerce payment gateway for DNAPayments.",
     "scripts": {
         "build": "wp-scripts build",
