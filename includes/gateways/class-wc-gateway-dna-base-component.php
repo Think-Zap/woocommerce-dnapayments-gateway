@@ -67,6 +67,9 @@ class WC_Gateway_DNA_Base_Payment_Component extends WC_Payment_Gateway {
 	public function process_payment( $order_id ) {
         global $woocommerce;
 
+        $logger = wc_get_logger();
+        $log_source = $this->id;
+
         $dnapayments_gateway = WC()->payment_gateways->payment_gateways()[WC_DNA_Payments::$id];
 
         $result_string = WC_DNA_Payments_Helpers::get_posted_value('wc-' . $this->id . '-result');
@@ -84,27 +87,13 @@ class WC_Gateway_DNA_Base_Payment_Component extends WC_Payment_Gateway {
 			throw new Exception( $message );
         }
 
-        $order->set_transaction_id($input['id']);
-        if($input['settled']) {
-            $order->payment_complete();
-            $order->add_order_note( sprintf( __( 'DNA Payments transaction complete (Transaction ID: %s)', 'woocommerce-gateway-dna' ), $input['id']) );
-
-            if ( 'yes' === $dnapayments_gateway->get_option( 'enable_order_complete' ) ) {
-                $order->update_status('completed');
-            }
-        } else {
-            $order->update_status('on-hold');
-            $order->add_order_note( sprintf( __( 'DNA Payments awaiting payment complete (Transaction ID: %s)', 'woocommerce-gateway-dna' ), $input['id']) );
-        }
-
-        $order->update_meta_data('rrn', $input['rrn']);
-        $order->update_meta_data('payment_method', $input['paymentMethod']);
-        $order->update_meta_data('is_finished_payment', $input['settled'] ? 'yes' : 'no');
+        $order->update_status('on-hold');
+        $order->add_order_note( sprintf( __( 'DNA Payments awaiting payment complete (Transaction ID: %s)', 'woocommerce-gateway-dna' ), $input['id']) );
 
         $manage_stock_option = get_option('woocommerce_manage_stock');
         // if the order status changed from pending to processing (on-hold), woocommerce automatically reduces stock
-        if ($manage_stock_option !== 'yes' || $status !== 'pending') {
-            $order->reduce_order_stock();
+        if ($manage_stock_option !== 'yes' || $order->get_status() !== 'pending') {
+            wc_reduce_stock_levels($order_id);
             $order->add_order_note( sprintf( __( 'DNA Payments reduced order stock by transaction (Transaction ID: %s)', 'woocommerce-gateway-dna' ), $input['id']) );
         }
 
@@ -113,13 +102,11 @@ class WC_Gateway_DNA_Base_Payment_Component extends WC_Payment_Gateway {
         // Remove cart
         WC()->cart->empty_cart();
 
-
         // Return thankyou redirect
         return array(
             'result' 	=> 'success',
             'redirect'	=> $this->get_return_url( $order )
         );
-        
 	}
 
     /**

@@ -314,7 +314,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 throw new Exception('Order processed by a different payment method: ' . $order->get_payment_method(), 400);
             }
     
-            if (!in_array($status, ['pending', 'failed', 'cancelled'])) {
+            if (!in_array($status, ['pending', 'failed', 'cancelled', 'on-hold'])) {
                 if (!empty($input['paypalCaptureStatus'])) {
                     $this->savePayPalOrderDetail($order, $input, true);
                 }
@@ -334,9 +334,11 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                     $new_status = 'completed';
                 }
             } else {
-                $order->update_status('on-hold');
                 $new_status = 'on-hold';
-                $order->add_order_note(sprintf(__('DNA Payments awaiting payment completion (Transaction ID: %s)', 'woocommerce-gateway-dna'), $input['id']));
+                if ($status !== 'on-hold') {
+                    $order->update_status('on-hold');
+                    $order->add_order_note(sprintf(__('DNA Payments awaiting payment completion (Transaction ID: %s)', 'woocommerce-gateway-dna'), $input['id'])); 
+                }
             }
 
             // Log status change
@@ -353,7 +355,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
     
             // Handle stock reduction
             $manage_stock_option = get_option('woocommerce_manage_stock');
-            if ($manage_stock_option !== 'yes' || $status !== 'pending') {
+            if ($manage_stock_option !== 'yes' || !in_array($status, ['pending', 'on-hold'])) {
                 wc_reduce_stock_levels($orderId);
                 $order->add_order_note(sprintf(__('DNA Payments reduced order stock (Transaction ID: %s)', 'woocommerce-gateway-dna'), $input['id']));
             }
