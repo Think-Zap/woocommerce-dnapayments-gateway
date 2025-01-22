@@ -656,6 +656,11 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
     public function process_payment( $order_id ) {
         global $woocommerce;
 
+        // Clean up all output buffers to remove unexpected output
+        while ( ob_get_level() > 0 ) {
+            ob_end_clean();
+        }
+
         $logger = wc_get_logger();
         $log_source = $this->id;
 
