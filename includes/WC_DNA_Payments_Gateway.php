@@ -384,6 +384,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 $e->getMessage(),
                 array(
                     'status' => $e->getCode() ? $e->getCode() : 500,
+                    'plugin_version' => WC_DNA_Payments::$version,
                     'stack_trace' => $e->getTraceAsString(),
                 )
             );
@@ -465,6 +466,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 $e->getMessage(),
                 array(
                     'status' => $e->getCode() ? $e->getCode() : 500,
+                    'plugin_version' => WC_DNA_Payments::$version,
                     'stack_trace' => $e->getTraceAsString(),
                 )
             );
@@ -507,6 +509,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 $e->getMessage(),
                 array(
                     'status' => $e->getCode() ? $e->getCode() : 500,
+                    'plugin_version' => WC_DNA_Payments::$version,
                     'stack_trace' => $e->getTraceAsString(),
                 )
             );
