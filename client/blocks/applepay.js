@@ -14,12 +14,16 @@ import { CONTAINER_IDS, GATEWAY_ID_APPLE_PAY, TEXT_DOMAIN } from './constants'
 import { PaymentComponent } from './components/payment-component'
 
 const settings = getPaymentMethodData(GATEWAY_ID_APPLE_PAY, {})
-const defaultLabel = __('Apple Pay by DNA Payments', TEXT_DOMAIN)
+const defaultLabel = __('Apple Pay', TEXT_DOMAIN)
 const label = decodeEntities(settings?.title || '') || defaultLabel
+const icon = settings?.icon
 
 const Label = (props) => {
     const { PaymentMethodLabel } = props.components
-    return <PaymentMethodLabel text={label} />
+    return <span style={{ width: '100%' }}>
+        <PaymentMethodLabel text={label} />
+        {icon && <img src={icon} style={{ float: 'right', marginRight: 20 }} />}
+    </span>
 }
 
 /**

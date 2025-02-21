@@ -51,7 +51,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
     public function __construct() {
 
         $this->id = 'dnapayments';
-        $this->icon = '';
+        $this->icon = WC_DNA_Payments::plugin_url() . '/assets/img/scheme.svg';
         $this->method_title = 'DNA Payments Gateway';
         $this->method_description = 'Card payment method';
 
@@ -536,8 +536,9 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             'temp_token' => $this->temp_token(),
             'terminal_id' => $this->terminal,
             'current_currency_code' => get_woocommerce_currency(),
-            'available_gateways' => WC()->payment_gateways->get_available_payment_gateways(),
+            'available_gateways' => array_keys(WC()->payment_gateways->get_available_payment_gateways()),
             'allow_saving_cards' => $this->enabled_saved_cards && !$is_guest,
+            'card_scheme_icon_path' => WC_DNA_Payments::plugin_url() . '/assets/img/cc',
             'send_callback_every_failed_attempt' => $this->get_option( 'failed_attempts_limit' ),
             'cards' => WC_DNA_Payments_Order_Client_Helpers::getCardTokens( $current_user_id, $this->id )
         );
@@ -572,27 +573,16 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         if (is_add_payment_method_page()) {
             wp_register_script('woocommerce_dna_payment', plugins_url('assets/js/dna-add-payment-method.js', WC_DNA_MAIN_FILE), array('jquery', 'dna-payment-api', 'dna-hosted-fields') , WC_DNA_VERSION, true);
 
-            $dna_params = array(
-                'is_test_mode' => $this->is_test_mode,
-                'integration_type' => $this->integration_type,
-                'allowSavingCards' => $this->enabled_saved_cards && !$is_guest,
-                'cards' => $this->enabled_saved_cards ? WC_DNA_Payments_Order_Client_Helpers::getCardTokens( $current_user_id, $this->id ) : []
-            );
+            $dna_params = $this->get_settings_for_frontend();
         } else {            
             wp_register_script('woocommerce_dna_payment', plugins_url('assets/js/dna-payment.js', WC_DNA_MAIN_FILE), array('jquery', 'dna-hosted-fields', 'dna-google-pay', 'dna-apple-pay', 'dna-payment-api') , WC_DNA_VERSION, true);
 
-            $dna_params = array(
-                'is_test_mode' => $this->is_test_mode,
-                'integration_type' => $this->integration_type,
-                'temp_token' => $this->temp_token(),
-                'terminal_id' => $this->terminal,
-                'order_id' => absint(get_query_var('order-pay')),
-                'session_order_id' => WC()->session->get('order_awaiting_payment'),
-                'current_currency_code' => get_woocommerce_currency(),
-                'available_gateways' => array_keys(WC()->payment_gateways->get_available_payment_gateways()),
-                'allowSavingCards' => $this->enabled_saved_cards && !$is_guest,
-                'send_callback_every_failed_attempt' => $this->get_option( 'failed_attempts_limit' ),
-                'cards' => $this->enabled_saved_cards ? WC_DNA_Payments_Order_Client_Helpers::getCardTokens( $current_user_id, $this->id ) : []
+            $dna_params = array_merge(
+                array(
+                    'order_id' => absint(get_query_var('order-pay')),
+                    'session_order_id' => WC()->session->get('order_awaiting_payment')
+                ),
+                $this->get_settings_for_frontend()
             );
         }        
 
@@ -916,34 +906,36 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
 		?>
 
         <div id="dna-card-cvc-token-container" class="form-row" style="display: none">
-            <label for="dna-card-cvc-token"><?php esc_html_e( 'Card code (CVC)', 'woocommerce-gateway-dna' ); ?> <span class="required">*</span></label>
-            <div id="dna-card-cvc-token" class="wc-dna-elements-field"></div>
+            <label for="dna-card-cvc-token"><?php esc_html_e( 'Card code (CVC)', 'woocommerce-gateway-dna' ); ?></label>
+            <div id="dna-card-cvc-token" class="wc-classic-dnapayments-gateway-input"></div>
         </div>
 
 		<fieldset id="wc-<?php echo esc_attr( $this->id ); ?>-cc-form" class="wc-credit-card-form wc-payment-form" style="background:transparent;">
 			<?php do_action( 'woocommerce_credit_card_form_start', $this->id ); ?>
 
-            <div class="form-row form-row-wide">
-                <label for="dna-card-number"><?php esc_html_e( 'Card number', 'woocommerce-gateway-dna' ); ?> <span class="required">*</span></label>
+            <div class="wc-classic-dnapayments-card-elements">
+                <div class="wc-classic-dnapayments-gateway-container">
+                    <label for="dna-card-number"><?php esc_html_e( 'Card number', 'woocommerce-gateway-dna' ); ?></label>
+                    <div class="wc-classic-dnapayments-gateway-input-container">
+                    <div id="dna-card-number" class="wc-classic-dnapayments-gateway-input"></div>
+                        <img id="dna-card-selected" class='wc-dnapayments-card-selected' src=<?php echo WC_DNA_Payments::plugin_url() . '/assets/img/cc/none.png'?> />
+                    </div>
+                </div>
 
-                <div id="dna-card-number" class="wc-dna-elements-field"></div>
-            </div>
+                <div class="wc-classic-dnapayments-gateway-container">
+                    <label for="dna-card-name"><?php esc_html_e( 'Cardholder name', 'woocommerce-gateway-dna' ); ?></label>
+                    <div id="dna-card-name" class="wc-classic-dnapayments-gateway-input"></div>
+                </div>
 
-            <div class="form-row form-row-wide">
-                <label for="dna-card-name"><?php esc_html_e( 'Cardholder name', 'woocommerce-gateway-dna' ); ?> <span class="required">*</span></label>
+                <div class="wc-classic-dnapayments-gateway-container wc-classic-dnapayments-card-element-small">
+                    <label for="dna-card-exp"><?php esc_html_e( 'Expiry date', 'woocommerce-gateway-dna' ); ?></label>
+                    <div id="dna-card-exp" class=" wc-classic-dnapayments-gateway-input"></div>
+                </div>
 
-                <div id="dna-card-name" class="wc-dna-elements-field"></div>
-            </div>
-
-            <div class="form-row form-row-first">
-                <label for="dna-card-exp"><?php esc_html_e( 'Expiry date', 'woocommerce-gateway-dna' ); ?> <span class="required">*</span></label>
-
-                <div id="dna-card-exp" class="wc-dna-elements-field"></div>
-            </div>
-
-            <div class="form-row form-row-last">
-                <label for="dna-card-cvc"><?php esc_html_e( 'Card code (CVC)', 'woocommerce-gateway-dna' ); ?> <span class="required">*</span></label>
-                <div id="dna-card-cvc" class="wc-dna-elements-field"></div>
+                <div class="wc-classic-dnapayments-gateway-container wc-classic-dnapayments-card-element-small">
+                    <label for="dna-card-cvc"><?php esc_html_e( 'Card code (CVC)', 'woocommerce-gateway-dna' ); ?></label>
+                    <div id="dna-card-cvc" class="wc-classic-dnapayments-gateway-input"></div>
+                </div>
             </div>
 
             <div class="clear"></div>

@@ -16,7 +16,7 @@ function get_dnapayments_admin_fields() {
          'title'       => __( 'Title', 'woocommerce-gateway-dna' ),
          'type'        => 'text',
          'description' => __( 'This controls the title which the user sees during checkout.', 'woocommerce-gateway-dna' ),
-         'default'     => 'Visa / Mastercard / American Express / Diners Club / Other',
+         'default'     => 'Card Payment',
          'desc_tip'    => true,
       ),
       'description' => array(

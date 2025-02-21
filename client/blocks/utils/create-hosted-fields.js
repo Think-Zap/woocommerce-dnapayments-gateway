@@ -35,7 +35,7 @@ export async function createHostedFields({
         accessToken,
         styles: {
             input: {
-                'font-size': '14px',
+                'font-size': '16px',
                 'font-family': 'Open Sans',
             },
             '::placeholder': {

@@ -13,7 +13,7 @@ jQuery( function( $ ) {
     const $checkout_form = isPayForOrderPage ?  $( 'form#order_review' ) : $( 'form.woocommerce-checkout' );
 
     const isTestMode = wc_dna_params.is_test_mode === '1';
-    const allowSavingCards = wc_dna_params.allowSavingCards === '1';
+    const allowSavingCards = wc_dna_params.allow_saving_cards === '1';
     const isHostedFields = wc_dna_params.integration_type === 'hosted-fields';
     const availableGateways = wc_dna_params.available_gateways || [];
     const cards = Object.values(wc_dna_params.cards || {});
@@ -304,7 +304,7 @@ jQuery( function( $ ) {
             accessToken: $card_form.data('token'),
             styles: {
                 'input': {
-                    'font-size': '14px',
+                    'font-size': '16px',
                     'font-family': 'Open Sans'
                 },
                 '::placeholder': {
@@ -352,6 +352,15 @@ jQuery( function( $ ) {
             hostedFieldsInstance.on('dna-payments-three-d-secure-hide', () => {
                 threeDSecureModal.hide();
                 formLoader.show();
+            });
+
+            hostedFieldsInstance.on('change', () => {
+                const state = hostedFieldsInstance.getState();
+                const scheme = state.cardInfo && state.cardInfo.type || 'none';
+                const img = document.getElementById('dna-card-selected');
+                if (img) {
+                    img.setAttribute('src', wc_dna_params.card_scheme_icon_path + '/' + scheme + '.png');
+                }
             });
 
             function onPaymentTokenChange(selected) {

@@ -21,6 +21,7 @@ const isHostedFields = settings.integration_type === 'hosted-fields'
 
 const defaultLabel = __('DNA Payments', TEXT_DOMAIN)
 const label = decodeEntities(settings?.title || '') || defaultLabel
+const icon = settings?.icon
 
 /**
  * Content component
@@ -68,7 +69,10 @@ const Content = (props) => {
  */
 const Label = (props) => {
     const { PaymentMethodLabel } = props.components
-    return <PaymentMethodLabel text={label} />
+    return <span style={{ width: '100%' }}>
+        <PaymentMethodLabel text={label} />
+        {icon && <img src={icon} style={{ float: 'right', marginRight: 20 }} />}
+    </span>
 }
 
 /**

@@ -13,6 +13,7 @@ import { getDnaPaymentsSettingsData } from '../utils/get_settings'
 import { createHostedFields } from '../utils/create-hosted-fields'
 import { createModal } from '../utils/create-modal'
 import { setPlaceOrderButtonDisabled } from '../utils/place-order-button'
+import { logData } from '../utils/log'
 
 /**
  * Render the credit card fields.
@@ -30,9 +31,12 @@ export const DnapaymentsCreditCardFields = ({
         token = null,
     } = props
 
+    const { cardSchemeIconPath } = getDnaPaymentsSettingsData()
+
     const mounted = useRef(false)
     const threeDSRef = useRef()
     const [isCvvTokenVisible, setIsCvvTokenVisible] = useState(false)
+    const [cardScheme, setCardScheme] = useState('')
 
     const [error, setError] = useState({
         name: '',
@@ -60,6 +64,12 @@ export const DnapaymentsCreditCardFields = ({
                 cvvToken: document.getElementById(HOSTED_FIELD_IDS.cvvToken),
             },
             sendCallbackEveryFailedAttempt
+        })
+
+        hostedFieldsInstance.on('change', () => {
+            const state = hostedFieldsInstance.getState()
+            setCardScheme(state.cardInfo?.type || '')
+            logData('card scheme:', state.cardInfo?.type)
         })
 
         if (selectedCard) {
@@ -113,6 +123,7 @@ export const DnapaymentsCreditCardFields = ({
                 <div className='wc-block-gateway-container'>
                     <div id={HOSTED_FIELD_IDS.number} className={`wc-block-gateway-input empty`} />
                     <label htmlFor={HOSTED_FIELD_IDS.number}>{__('Card number', TEXT_DOMAIN)}</label>
+                    <img className='wc-dnapayments-card-selected' src={`${cardSchemeIconPath}/${cardScheme || 'none'}.png`} />            
                     <ValidationInputError errorMessage={error.number} />
                 </div>
 

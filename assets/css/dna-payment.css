@@ -1,3 +1,14 @@
+.wc-dnapayments-card-selected {
+    position: absolute !important;
+    z-index: 10;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0 !important;
+}
+
+/** BLOCK checkout styles **/
+
 .wc-block-dnapayments-card-elements {
     display: flex;
     width: 100%;
@@ -22,14 +33,50 @@
     cursor: not-allowed;
 }
 
+/** CLASSIC checkout styles **/
 
-.wc-dna-elements-field {
-    border: 1px solid #ddd;
-    margin: 5px 0;
-    padding: 5px;
+.wc-classic-dnapayments-card-elements {
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.wc-classic-dnapayments-gateway-container {
+    width: 100%;
+    font-size: 16px;
+    margin: 8px 0;
+}
+
+.wc-classic-dnapayments-gateway-input-container {
+    position: relative;
+}
+
+.wc-classic-dnapayments-gateway-container label {
+    color: #757575;
+    font-weight: normal;
+    display: block;
+    margin-bottom: 5px;
+}
+
+.wc-classic-dnapayments-gateway-input {
     background-color: #fff;
-    outline: 0;
-    height: 30px;
+    border: 1px solid #50575e;
+    border-radius: 4px;
+    box-sizing: border-box;
+    color: #2b2d2f;
+    cursor: text;
+    font-family: inherit;
+    font-size: 1em;
+    height: 3em;
+    line-height: 1.375;
+    margin: 0;
+    padding: .75em 0 .75em 16px;
+    width: 100%;
+}
+
+.wc-classic-dnapayments-card-element-small {
+    width: calc(50% - 8px);
 }
 
 .dna-modal-container {
@@ -75,20 +122,6 @@
 #wc-dnapayments-form {
     text-align: left;
     font-weight: normal;
-}
-
-#wc-dnapayments-cc-form .form-row {
-    display: block;
-    margin: 0 0 1em 0;
-}
-
-#wc-dnapayments-cc-form .form-row-wide {
-    clear: both;
-    width: 100%;
-}
-
-#wc-dnapayments-cc-form .form-row label {
-    margin: 0;
 }
 
 #wc-dnapayments-form .clear {
@@ -139,18 +172,5 @@
 @media (min-width: 768px) {
     #dna-card-cvc-token-container {
         width: 75%;
-    }
-
-    #wc-dnapayments-cc-form .form-row-first {
-        width: 47.0588235294%;
-        float: left;
-        margin-right: 5.8823529412%;
-        clear: both;
-    }
-
-    #wc-dnapayments-cc-form .form-row-last {
-        width: 47.0588235294%;
-        float: right;
-        margin-right: 0;
     }
 }

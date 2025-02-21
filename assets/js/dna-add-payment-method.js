@@ -142,7 +142,7 @@ jQuery( function( $ ) {
             accessToken: $card_form.data('token'),
             styles: {
                 'input': {
-                    'font-size': '14px',
+                    'font-size': '16px',
                     'font-family': 'Open Sans'
                 },
                 '::placeholder': {
@@ -189,6 +189,15 @@ jQuery( function( $ ) {
             hostedFieldsInstance.on('dna-payments-three-d-secure-hide', () => {
                 threeDSecureModal.hide();
                 formLoader.show();
+            });
+
+            hostedFieldsInstance.on('change', () => {
+                const state = hostedFieldsInstance.getState();
+                const scheme = state.cardInfo && state.cardInfo.type || 'none';
+                const img = document.getElementById('dna-card-selected');
+                if (img) {
+                    img.setAttribute('src', wc_dna_params.card_scheme_icon_path + '/' + scheme + '.png');
+                }
             });
 
         } catch (err) {
