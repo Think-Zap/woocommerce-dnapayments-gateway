@@ -18,6 +18,8 @@ jQuery( function( $ ) {
     const availableGateways = wc_dna_params.available_gateways || [];
     const cards = Object.values(wc_dna_params.cards || {});
 
+    const requiredFieldNames = ['billing_country', 'billing_city', 'billing_address_1', 'billing_email', 'billing_last_name', 'billing_first_name', 'billing_postcode'];
+
     let hostedFieldsInstance, hostedFieldsInstanceId;
 
     const threeDSecureModal = createModal('three-d-secure');
@@ -38,7 +40,36 @@ jQuery( function( $ ) {
         selectGateway($(this).val());
     });
 
+    $checkout_form.on('change', 'input, textarea, select', function(e) {
+        const field = e.target;
+        const name = field && field.getAttribute('name');
+
+        if (!isRequiredFieldsAreFilled()) {
+            return;
+        }
+
+        if (requiredFieldNames.includes(name) || name === 'terms') {
+            googlePay.paymentData = null
+            applePay.paymentData = null
+            selectGateway($('input[name="payment_method"]:checked').val());
+        }
+    });
+
     $checkout_form.on(isPayForOrderPage ? 'submit' : 'checkout_place_order_dnapayments', onSubmit);
+
+    function isRequiredFieldsAreFilled() {
+        let isFilled = true;
+        $checkout_form.find('input, textarea, select').each(function() {
+            const $field = $(this);
+            const value = $field.val();
+
+            if (requiredFieldNames.includes($field.attr('name')) && (!value || value.toString().trim() === '')) {
+                isFilled = false;
+                return false; // Break loop early
+            }
+        });
+        return isFilled;
+    }
 
     function selectGateway(selectedGateway) {
         const placeOrderBtn = document.getElementById('place_order');
@@ -300,7 +331,7 @@ jQuery( function( $ ) {
         hostedFieldsInstanceId = instanceId
 
         const options = {
-            isTest: isTestMode,
+            isTestMode: isTestMode,
             accessToken: $card_form.data('token'),
             styles: {
                 'input': {

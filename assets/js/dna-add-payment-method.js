@@ -138,7 +138,7 @@ jQuery( function( $ ) {
         hostedFieldsInstanceId = instanceId
 
         const options = {
-            isTest: isTestMode,
+            isTestMode: isTestMode,
             accessToken: $card_form.data('token'),
             styles: {
                 'input': {

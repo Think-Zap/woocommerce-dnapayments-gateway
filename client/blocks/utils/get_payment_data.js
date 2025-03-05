@@ -25,6 +25,12 @@ export function getPaymentData(props) {
     }
 }
 
+export function isRequiredFieldsAreFilled(props) {
+    const { billing: { billingAddress } } = props
+    const requiredFieldNames = ['email', 'first_name', 'last_name', 'address_1', 'country', 'city', 'postcode']
+    return requiredFieldNames.every((field) => billingAddress[field]?.trim());
+}
+
 export function getAmount(amount, { billing }) {
     return amount / 10 ** billing.currency.minorUnit
 }

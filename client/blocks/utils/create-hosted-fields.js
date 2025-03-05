@@ -1,7 +1,7 @@
 import { logError } from './log'
 
 export async function createHostedFields({
-    isTest,
+    isTestMode,
     accessToken,
     threeDSModal,
     domElements: { number, name, expDate, cvv, cvvToken },
@@ -31,7 +31,7 @@ export async function createHostedFields({
     }
 
     const options = {
-        isTest,
+        isTestMode,
         accessToken,
         styles: {
             input: {

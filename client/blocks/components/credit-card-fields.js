@@ -53,7 +53,7 @@ export const DnapaymentsCreditCardFields = ({
 
         threeDSRef.current = createModal(HOSTED_FIELD_IDS.threeDS)
         hostedFieldsInstance = await createHostedFields({
-            isTest: isTestMode,
+            isTestMode: isTestMode,
             accessToken: tempToken,
             threeDSModal: threeDSRef.current,
             domElements: {
