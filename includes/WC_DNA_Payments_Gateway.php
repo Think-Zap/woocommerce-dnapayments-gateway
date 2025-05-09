@@ -662,7 +662,8 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             if ( $duplicate_order_id && $duplicate_order_id !== intval( $order_id ) ) {
                 $duplicate_order = wc_get_order( $duplicate_order_id );
                 if ( $duplicate_order && 'pending' === $duplicate_order->get_status() ) {
-                    $duplicate_order->update_status( 'checkout-draft', 'Order was cancelled by ' . $this->id . ' to prevent duplication.' );
+                    $order_status = apply_filters( 'wc_dna_duplicate_order_status', 'checkout-draft', $duplicate_order );
+                    $duplicate_order->update_status( $order_status, 'Order was cancelled by ' . $this->id . ' to prevent duplication.' );
                     wc_release_stock_for_order( $duplicate_order_id );
                     $logger->info('Order with ID ' . $duplicate_order_id . ' was cancelled by ' . $this->id . ' to prevent duplication.', ['source' => $log_source]);
                 }
