@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name: WooCommerce DNA Payments Gateway
+ * Plugin Name: WooCommerce DNA Payments Gateway by Zap
  * Plugin URI: https://www.dnapayments.com
  * Description: Take credit card payments on your store.
- * Version: 3.0.14
+ * Version: 3.0.15_ZAP
  *
  * Author: DNA Payments Integration
  * Author URI: https://www.dnapayments.com
@@ -67,9 +67,9 @@ class WC_DNA_Payments {
 		add_action( 'init', function() {
 			// Load translations
 			load_plugin_textdomain( self::$text_domain, false, self::plugin_abspath() . '/languages' );
-		} );		
+		} );
 
-		// This hook is used to execute code after all active plugins have fully loaded, 
+		// This hook is used to execute code after all active plugins have fully loaded,
 		// ensuring that WooCommerce is loaded before executing WooCommerce-specific code.
 		add_action( 'plugins_loaded', array( __CLASS__, 'includes' ), 0 );
 
@@ -85,12 +85,12 @@ class WC_DNA_Payments {
 		// Change "Thank you" ("Order received") page title when order status failed
 		add_filter( 'woocommerce_endpoint_order-received_title', array( __CLASS__, 'custom_woocommerce_endpoint_order_received_title' ), 10, 3 );
 
-		// Change "Thank you" ("Order received") page text when order status failed		
-		add_filter('woocommerce_thankyou_order_received_text', array( __CLASS__, 'custom_order_received_text' ), 10, 3);		
+		// Change "Thank you" ("Order received") page text when order status failed
+		add_filter('woocommerce_thankyou_order_received_text', array( __CLASS__, 'custom_order_received_text' ), 10, 3);
 	}
 
 	public static function before_woocommerce_hpos() {
-		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) { 
+		if ( class_exists( \Automattic\WooCommerce\Utilities\FeaturesUtil::class ) ) {
 			\Automattic\WooCommerce\Utilities\FeaturesUtil::declare_compatibility( 'custom_order_tables', __FILE__, true );
 		}
 	}
@@ -99,7 +99,7 @@ class WC_DNA_Payments {
 		if ($endpoint == 'order-received') {
 			global $wp;
 
-			// Order status is sent via query string because the user might be redirected to the thank you page before the status is updated in the database. 
+			// Order status is sent via query string because the user might be redirected to the thank you page before the status is updated in the database.
 			$status = isset($_GET['status']) ? sanitize_text_field($_GET['status']) : '';
 			$order_id  = apply_filters( 'woocommerce_thankyou_order_id', absint( $wp->query_vars['order-received'] ) );
 

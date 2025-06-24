@@ -82,7 +82,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         $this->supports = array( 'products', 'refunds' );
         if ( $this->enabled_saved_cards ) {
             array_push($this->supports, 'tokenization' );
-        }        
+        }
     }
 
     public function get_config() {
@@ -303,17 +303,17 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             if (!$order) {
                 throw new Exception('Order not found for ID: ' . $orderId, 400);
             }
-    
+
             $status = $order->get_status();
             $new_status = 'processing';
-    
+
             $logger->info('Processing success webhook for order ID ' . $orderId . ' with status ' . $status, ['source' => $log_source]);
-    
+
             // Validate order
             if (!WC_DNA_Payments_Order_Client_Helpers::isDNAPaymentOrder($order)) {
                 throw new Exception('Order processed by a different payment method: ' . $order->get_payment_method(), 400);
             }
-    
+
             if (!in_array($status, ['pending', 'failed', 'cancelled', 'on-hold'])) {
                 if (!empty($input['paypalCaptureStatus'])) {
                     $this->savePayPalOrderDetail($order, $input, true);
@@ -337,32 +337,32 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 $new_status = 'on-hold';
                 if ($status !== 'on-hold') {
                     $order->update_status('on-hold');
-                    $order->add_order_note(sprintf(__('DNA Payments awaiting payment completion (Transaction ID: %s)', 'woocommerce-gateway-dna'), $input['id'])); 
+                    $order->add_order_note(sprintf(__('DNA Payments awaiting payment completion (Transaction ID: %s)', 'woocommerce-gateway-dna'), $input['id']));
                 }
             }
 
             // Log status change
             $order->add_order_note(sprintf(__('DNA Payments updated order status from %s to %s.', 'woocommerce-gateway-dna'), ucfirst($status), ucfirst($new_status)));
-    
+
             // Update metadata
             $order->update_meta_data('rrn', $input['rrn'] ?? '');
             $order->update_meta_data('payment_method', $input['paymentMethod'] ?? '');
             $order->update_meta_data('is_finished_payment', $input['settled'] ? 'yes' : 'no');
-    
+
             if (!empty($input['paypalCaptureStatus'])) {
                 $this->savePayPalOrderDetail($order, $input, false);
             }
-    
+
             // Handle stock reduction
             $manage_stock_option = get_option('woocommerce_manage_stock');
             if ($manage_stock_option !== 'yes' || !in_array($status, ['pending', 'on-hold'])) {
                 wc_reduce_stock_levels($orderId);
                 $order->add_order_note(sprintf(__('DNA Payments reduced order stock (Transaction ID: %s)', 'woocommerce-gateway-dna'), $input['id']));
             }
-    
+
             $order->save();
             $logger->info('Processed success webhook for order ID ' . $orderId . ' with status ' . $status, ['source' => $log_source]);
-    
+
             // Handle saving card tokens
             if ($this->enabled_saved_cards && ($order->get_meta('save_payment_method_requested', true) === 'yes' || $input['storeCardOnFile'] || $storeCardOnFile)) {
                 WC_DNA_Payments_Order_Client_Helpers::saveCardToken($input, $this->id);
@@ -377,7 +377,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             $logger->error('Error in success_webhook: ' . $e->getMessage(), ['source' => $log_source]);
             $logger->error('Input: ' . json_encode($data), ['source' => $log_source]);
             $logger->error('Stack trace: ' . $e->getTraceAsString(), ['source' => $log_source]);
-            
+
             // Respond with the error message and code
             return new WP_Error(
                 $this->id . '_error',
@@ -443,14 +443,14 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             if(!empty($input['paypalCaptureStatus'])) {
                 $this->savePayPalOrderDetail($order, $input, false);
             }
-            
+
             if ($order->get_status() !== 'pending') {
                 throw new Exception('Order with ID ' . $orderId . ' is already processed with status: ' . $order->get_status(), 400);
             }
 
             $order->update_status('failed', 'Payment failed');
             $order->save();
-        
+
             return rest_ensure_response([
                 'success' => true,
                 'message' => 'Failure webhook processed successfully.',
@@ -459,7 +459,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             $logger->error('Error in fail_webhook: ' . $e->getMessage(), ['source' => $log_source]);
             $logger->error('Input: ' . json_encode($data), ['source' => $log_source]);
             $logger->error('Stack trace: ' . $e->getTraceAsString(), ['source' => $log_source]);
-            
+
             // Respond with the error message and code
             return new WP_Error(
                 $this->id . '_error',
@@ -502,7 +502,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             $logger->error('Error in success_webhook_add_card: ' . $e->getMessage(), ['source' => $log_source]);
             $logger->error('Input: ' . json_encode($data), ['source' => $log_source]);
             $logger->error('Stack trace: ' . $e->getTraceAsString(), ['source' => $log_source]);
-            
+
             // Respond with the error message and code
             return new WP_Error(
                 $this->id . '_error',
@@ -553,7 +553,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         wp_register_script( 'dna-hosted-fields', 'https://' . $prefix . 'cdn.dnapayments.com/js/hosted-fields/hosted-fields.js' , array(), WC_DNA_VERSION, true );
         wp_register_script( 'dna-google-pay', 'https://' . $prefix . 'pay.dnapayments.com/components/google-pay/google-pay-component.js', array('dna-payment-api'), WC_DNA_VERSION, true );
         wp_register_script( 'dna-apple-pay', 'https://' . $prefix . 'pay.dnapayments.com/components/apple-pay/apple-pay-component.js', array('dna-payment-api'), WC_DNA_VERSION, true );
-        
+
         if ( ! is_cart() && ! is_checkout() && ! isset( $_GET['pay_for_order'] ) && ! is_add_payment_method_page()) {
             return;
         }
@@ -574,7 +574,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             wp_register_script('woocommerce_dna_payment', plugins_url('assets/js/dna-add-payment-method.js', WC_DNA_MAIN_FILE), array('jquery', 'dna-payment-api', 'dna-hosted-fields') , WC_DNA_VERSION, true);
 
             $dna_params = $this->get_settings_for_frontend();
-        } else {            
+        } else {
             wp_register_script('woocommerce_dna_payment', plugins_url('assets/js/dna-payment.js', WC_DNA_MAIN_FILE), array('jquery', 'dna-hosted-fields', 'dna-google-pay', 'dna-apple-pay', 'dna-payment-api') , WC_DNA_VERSION, true);
 
             $dna_params = array_merge(
@@ -584,7 +584,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 ),
                 $this->get_settings_for_frontend()
             );
-        }        
+        }
 
         wp_localize_script( 'woocommerce_dna_payment', 'wc_dna_params', apply_filters( 'wc_dna_params', $dna_params ) );
         wp_enqueue_script('woocommerce_dna_payment');
@@ -597,7 +597,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             // Skip validation on Pay for Order page
             return true;
         }
-        
+
         if( strlen ( $_POST[ 'billing_country' ]) > 2 ) {
             $this->add_notice(__('Country must be less than 2 symbols', 'woocommerce-gateway-dna' ), 'error');
             return false;
@@ -662,7 +662,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             if ( $duplicate_order_id && $duplicate_order_id !== intval( $order_id ) ) {
                 $duplicate_order = wc_get_order( $duplicate_order_id );
                 if ( $duplicate_order && 'pending' === $duplicate_order->get_status() ) {
-                    $duplicate_order->update_status( 'checkout-draft', 'Order was cancelled by ' . $this->id . ' to prevent duplication.' );
+	                $duplicate_order->update_status( 'cancelled', 'Order was cancelled by ' . $this->id . ' to prevent duplication.' );
                     wc_release_stock_for_order( $duplicate_order_id );
                     $logger->info('Order with ID ' . $duplicate_order_id . ' was cancelled by ' . $this->id . ' to prevent duplication.', ['source' => $log_source]);
                 }
@@ -682,7 +682,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             $response['auth'] = json_encode($response['auth']);
 
             $order->update_meta_data('save_payment_method_requested', $this->save_payment_method_requested() ? 'yes' : 'no');
-            $order->save();    
+            $order->save();
         }
 
         return $response;
@@ -716,7 +716,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 'city'          => get_field( $meta, $prefix . '_city' ),
                 'postalCode'    => get_field( $meta, $prefix . '_postcode' ),
                 'phone'         => get_field( $meta, $prefix . '_phone' ),
-                'country'       => get_field( $meta, $prefix . '_country' ), 
+                'country'       => get_field( $meta, $prefix . '_country' ),
             );
         }
 
@@ -746,7 +746,7 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         ];
 
         echo json_encode(array(
-            'paymentData'   => $paymentData,            
+            'paymentData'   => $paymentData,
             'auth'          => $auth,
             'result'        => is_null($auth['access_token']) ? 'failure' : 'success'
         ));
