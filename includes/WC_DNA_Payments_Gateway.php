@@ -688,6 +688,26 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
         return $response;
     }
 
+	private function get_field($meta, $field) {
+		if ( isset( $meta [ $field ] ) ) {
+			return $meta [ $field ][0];
+		}
+		return '';
+	}
+
+	private function get_address($meta, $prefix) {
+		return array(
+			'firstName'     => $this->get_field( $meta, $prefix . '_first_name' ),
+			'lastName'      => $this->get_field( $meta, $prefix . '_last_name' ),
+			'addressLine1'  => $this->get_field( $meta, $prefix . '_address_1' ),
+			'addressLine2'  => $this->get_field( $meta, $prefix . '_address_2' ),
+			'city'          => $this->get_field( $meta, $prefix . '_city' ),
+			'postalCode'    => $this->get_field( $meta, $prefix . '_postcode' ),
+			'phone'         => $this->get_field( $meta, $prefix . '_phone' ),
+			'country'       => $this->get_field( $meta, $prefix . '_country' ),
+		);
+	}
+
     public function add_card_payment_data() {
 
         $user_id    = get_current_user_id();
@@ -700,25 +720,9 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
             return get_site_url( null, add_query_arg( array('result' => $result), 'my-account/payment-methods' ) );
         }
 
-        function get_field($meta, $field) {
-            if ( isset( $meta [ $field ] ) ) {
-                return $meta [ $field ][0];
-            }
-            return '';
-        }
 
-        function get_address($meta, $prefix) {
-            return array(
-                'firstName'     => get_field( $meta, $prefix . '_first_name' ),
-                'lastName'      => get_field( $meta, $prefix . '_last_name' ),
-                'addressLine1'  => get_field( $meta, $prefix . '_address_1' ),
-                'addressLine2'  => get_field( $meta, $prefix . '_address_2' ),
-                'city'          => get_field( $meta, $prefix . '_city' ),
-                'postalCode'    => get_field( $meta, $prefix . '_postcode' ),
-                'phone'         => get_field( $meta, $prefix . '_phone' ),
-                'country'       => get_field( $meta, $prefix . '_country' ),
-            );
-        }
+
+
 
         $paymentData = [
             'transactionType'   => 'VERIFICATION',
@@ -734,13 +738,13 @@ class WC_DNA_Payments_Gateway extends WC_Payment_Gateway {
                 'callbackUrl'       => get_rest_url(null, 'dnapayments/success-add-card')
             ],
             'customerDetails' => [
-                'email'             => get_field( $meta, 'billing_email' ),
+                'email'             => $this->get_field( $meta, 'billing_email' ),
                 'accountDetails' => [
                     'accountId'     => strval($user_id)
                 ],
-                'billingAddress'    => get_address($meta, 'billing'),
+                'billingAddress'    => $this->get_address($meta, 'billing'),
                 'deliveryDetails' => [
-                    'deliveryAddress' => get_address($meta, 'shipping'),
+                    'deliveryAddress' => $this->get_address($meta, 'shipping'),
                 ]
             ]
         ];
